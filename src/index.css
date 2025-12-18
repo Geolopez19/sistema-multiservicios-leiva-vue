@@ -1,0 +1,167 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+/* Estilos modernos para DataTable */
+.modern-table .p-datatable-header {
+  @apply bg-gradient-to-r from-indigo-50 to-purple-50 border-b-2 border-indigo-200;
+}
+
+.modern-table .p-datatable-thead > tr > th {
+  @apply bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold;
+  padding: 1rem !important;
+}
+
+.modern-table .p-datatable-tbody > tr {
+  @apply transition-all duration-200;
+}
+
+.modern-table .p-datatable-tbody > tr:hover {
+  @apply bg-indigo-50 transform scale-[1.01] shadow-md;
+}
+
+.modern-table .p-datatable-tbody > tr > td {
+  @apply border-b border-indigo-100;
+  padding: 1rem !important;
+}
+
+/* Botones con mejor estilo */
+.p-button {
+  @apply transition-all duration-200;
+}
+
+.p-button:hover {
+  @apply transform scale-105;
+}
+
+/* Tags con mejor diseño */
+.p-tag {
+  @apply font-semibold shadow-sm;
+}
+
+/* Drawers más modernos */
+.p-drawer {
+  @apply bg-white;
+}
+
+.p-drawer .p-drawer-header {
+  @apply bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg;
+}
+
+.p-drawer .p-drawer-content {
+  @apply bg-gradient-to-b from-slate-50 to-white;
+}
+
+/* Panels con mejor estilo */
+.p-panel {
+  @apply bg-white rounded-xl shadow-md border border-indigo-100;
+}
+
+.p-panel .p-panel-header {
+  @apply bg-gradient-to-r from-indigo-50 to-purple-50 border-l-4 border-indigo-500 rounded-t-xl;
+}
+
+.p-panel .p-panel-content {
+  @apply bg-white;
+}
+
+/* Modales/Dialogs modernos */
+.p-dialog {
+  @apply bg-white rounded-2xl shadow-2xl border border-indigo-100;
+}
+
+.p-dialog .p-dialog-header {
+  @apply bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-t-2xl;
+}
+
+.p-dialog .p-dialog-content {
+  @apply bg-white;
+}
+
+/* Listbox moderno */
+.p-listbox {
+  @apply bg-white border border-indigo-200 rounded-xl shadow-sm;
+}
+
+.p-listbox .p-listbox-item {
+  @apply hover:bg-indigo-50 transition-colors;
+}
+
+.p-listbox .p-listbox-item.p-highlight {
+  @apply bg-indigo-100 text-indigo-900;
+}
+
+/* Inputs con foco mejorado */
+.p-inputtext,
+.p-inputnumber-input,
+.p-textarea {
+  @apply bg-white border-slate-300 text-slate-900;
+}
+
+.p-inputtext:focus,
+.p-inputnumber-input:focus,
+.p-textarea:focus {
+  @apply border-indigo-500 ring-2 ring-indigo-200 bg-white;
+}
+
+.p-inputtext:disabled,
+.p-inputnumber-input:disabled,
+.p-textarea:disabled {
+  @apply bg-slate-100 text-slate-600 cursor-not-allowed;
+}
+
+/* Select/Dropdown moderno */
+.p-select,
+.p-dropdown {
+  @apply bg-white border-slate-300;
+}
+
+.p-select:focus,
+.p-dropdown:focus {
+  @apply border-indigo-500 ring-2 ring-indigo-200;
+}
+
+.p-select-overlay,
+.p-dropdown-overlay {
+  @apply bg-white shadow-xl border border-indigo-100 rounded-xl;
+}
+
+/* InputIcon/IconField */
+.p-iconfield {
+  @apply relative;
+}
+
+.p-iconfield .p-inputtext {
+  @apply pl-10;
+}
+
+/* Scrollbar personalizado */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-slate-100;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-indigo-400 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-indigo-600;
+}
+
