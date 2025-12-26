@@ -1,170 +1,232 @@
 <template>
-  <div class="p-6">
-    <div class="flex justify-between items-center mb-6">
-      <h1 class="text-3xl font-bold text-gray-800">Compras</h1>
-      <div class="flex gap-3">
-        <Select v-model="statusFilter" :options="statusOptions" optionLabel="label" optionValue="value" class="w-48" />
-        <Button type="button" label="Nueva Compra" icon="pi pi-plus" @click.prevent="createPurchase" />
+  <div class="max-w-7xl mx-auto p-4 md:p-6">
+    <!-- Header solido -->
+    <div class="bg-indigo-600 rounded-2xl shadow-xl p-8 mb-8 text-white transition-all hover:shadow-2xl">
+      <div class="flex flex-col md:flex-row justify-between items-center gap-6">
+        <div>
+          <h1 class="text-4xl font-black mb-2 flex items-center gap-3">
+            <i class="pi pi-shopping-bag text-3xl opacity-80"></i>
+            Compras
+          </h1>
+          <p class="text-indigo-100 font-medium">Gestión de abastecimiento e ingreso de mercancía</p>
+        </div>
+        <div class="flex flex-wrap justify-center gap-4">
+          <Select 
+            v-model="statusFilter" 
+            :options="statusOptions" 
+            optionLabel="label" 
+            optionValue="value" 
+            class="w-48 bg-white/10 border-white/20 text-white rounded-xl backdrop-blur-md" 
+            placeholder="Filtrar por estado"
+          />
+          <Button 
+            type="button" 
+            label="Nueva Compra" 
+            icon="pi pi-plus-circle" 
+            @click.prevent="createPurchase" 
+            class="bg-white/10 hover:bg-white/20 border border-white/20 shadow-lg px-6 font-bold rounded-xl backdrop-blur-md"
+            style="color: white !important;"
+            size="large"
+          />
+        </div>
       </div>
     </div>
 
     <!-- Tabla de Compras -->
-    <DataTable 
-      :value="filteredPurchases" 
-      :loading="isLoading" 
-      stripedRows 
-      responsiveLayout="stack" 
-      class="shadow-md rounded-lg overflow-hidden border border-gray-200"
-    >
-      <Column field="number" header="#">
-        <template #body="{ data }">{{ data.number ?? '—' }}</template>
-      </Column>
-      <Column field="supplier_name" header="Proveedor"></Column>
-      <Column field="status" header="Estado">
-        <template #body="{ data }">
-          <Tag :value="statusLabel(data.status)" :severity="statusSeverity(data.status)" />
-        </template>
-      </Column>
-      <Column field="total" header="Total">
-        <template #body="{ data }">{{ formatCurrency(data.total) }}</template>
-      </Column>
-      <Column field="created_at" header="Fecha">
-        <template #body="{ data }">{{ new Date(data.created_at).toLocaleString() }}</template>
-      </Column>
-      <Column header="Acciones">
-        <template #body="{ data }">
-          <div class="flex gap-2">
-            <Button 
-              type="button"
-              :icon="data.status === 'draft' ? 'pi pi-pencil' : 'pi pi-eye'" 
-              :severity="data.status === 'draft' ? 'info' : 'secondary'" 
-              text rounded 
-              @click.prevent="openPurchase(data)" 
-            />
-            <Button type="button" icon="pi pi-print" severity="secondary" text rounded @click.prevent="handlePrint(data)" />
-          </div>
-        </template>
-      </Column>
-    </DataTable>
+    <div class="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
+      <DataTable 
+        :value="filteredPurchases" 
+        :loading="isLoading" 
+        paginator 
+        :rows="15"
+        stripedRows 
+        responsiveLayout="stack" 
+        class="modern-table"
+        @row-click="(e) => openPurchase(e.data)"
+        :rowClass="() => 'cursor-pointer'"
+      >
+        <Column field="number" header="#" style="width: 80px">
+          <template #body="{ data }">
+            <span class="font-bold text-slate-800">{{ data.number ?? '—' }}</span>
+          </template>
+        </Column>
+        <Column field="supplier_name" header="Proveedor">
+          <template #body="{ data }">
+            <div class="flex items-center gap-2">
+              <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-500">
+                {{ data.supplier_name?.charAt(0) || '?' }}
+              </div>
+              <span class="font-medium text-slate-700">{{ data.supplier_name }}</span>
+            </div>
+          </template>
+        </Column>
+        <Column field="status" header="Estado">
+          <template #body="{ data }">
+            <Tag :value="statusLabel(data.status)" :severity="statusSeverity(data.status)" class="px-3 py-1 rounded-full uppercase text-[10px]" />
+          </template>
+        </Column>
+        <Column field="total" header="Total">
+          <template #body="{ data }">
+            <span class="font-bold text-indigo-600">{{ formatCurrency(data.total) }}</span>
+          </template>
+        </Column>
+        <Column field="created_at" header="Fecha">
+          <template #body="{ data }">
+            <div class="flex flex-col">
+              <span class="text-sm text-slate-700">{{ new Date(data.created_at).toLocaleDateString() }}</span>
+              <span class="text-[10px] text-slate-400">{{ new Date(data.created_at).toLocaleTimeString() }}</span>
+            </div>
+          </template>
+        </Column>
+        <Column header="Acciones" headerClass="text-center" bodyClass="text-center">
+          <template #body="{ data }">
+            <div class="flex justify-center gap-1">
+              <Button 
+                type="button"
+                :icon="data.status === 'draft' ? 'pi pi-pencil' : 'pi pi-eye'" 
+                :severity="data.status === 'draft' ? 'info' : 'secondary'" 
+                text rounded 
+                @click.stop="openPurchase(data)" 
+                v-tooltip.top="data.status === 'draft' ? 'Editar' : 'Visualizar'"
+              />
+              <Button 
+                type="button" 
+                icon="pi pi-print" 
+                severity="help" 
+                text rounded 
+                @click.stop="handlePrint(data)" 
+                v-tooltip.top="'Imprimir'"
+              />
+            </div>
+          </template>
+        </Column>
+      </DataTable>
+    </div>
 
     <!-- Drawer de Detalle/Edición -->
-    <Drawer v-model:visible="drawerVisible" position="right" class="w-full md:w-[600px] lg:w-[800px]" :header="'Compra #' + (currentPurchase?.number ?? '—')">
+    <Drawer 
+      v-model:visible="drawerVisible" 
+      position="right" 
+      class="modern-drawer" 
+      style="width: 70vw; max-width: 1100px"
+      :modal="true"
+      :blockScroll="true"
+    >
       <template #header>
-        <div class="flex items-center gap-3">
-          <span class="text-xl font-bold">Compra #{{ currentPurchase?.number ?? '—' }}</span>
-          <Tag :value="statusLabel(currentPurchase?.status)" :severity="statusSeverity(currentPurchase?.status)" />
+        <div class="flex items-center gap-4">
+          <div class="bg-indigo-600 p-3 rounded-xl shadow-lg shadow-indigo-200">
+            <i class="pi pi-shopping-cart text-white text-2xl"></i>
+          </div>
+          <div>
+            <h2 class="text-2xl font-black text-slate-800">
+              {{ currentPurchase?.id ? 'Compra #' + (currentPurchase?.number || '...') : 'Nueva Compra' }}
+            </h2>
+            <div class="flex items-center gap-2 mt-1">
+              <Tag :value="statusLabel(currentPurchase?.status)" :severity="statusSeverity(currentPurchase?.status)" class="px-2 py-0.5 rounded-md uppercase text-[10px]" />
+              <span v-if="currentPurchase?.created_at" class="text-xs text-slate-400">
+                {{ new Date(currentPurchase.created_at).toLocaleString() }}
+              </span>
+            </div>
+          </div>
         </div>
       </template>
 
-      <div class="flex flex-col h-full">
-        <div class="flex-1 overflow-y-auto p-4 space-y-6">
-          <!-- Sección Proveedor -->
-          <Panel header="Proveedor">
-            <div v-if="supplier.name" class="space-y-4">
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="flex flex-col gap-1">
-                  <span class="text-sm font-semibold text-gray-500 uppercase">Nombre</span>
-                  <span class="text-lg">{{ supplier.name }}</span>
-                </div>
-                <div class="flex flex-col gap-1">
-                  <span class="text-sm font-semibold text-gray-500 uppercase">Teléfono</span>
-                  <span>{{ supplier.phone || '—' }}</span>
-                </div>
-                <div class="flex flex-col gap-1">
-                  <span class="text-sm font-semibold text-gray-500 uppercase">Email</span>
-                  <span>{{ supplier.email || '—' }}</span>
-                </div>
-              </div>
-              <Button v-if="!readOnly" label="Cambiar Proveedor" icon="pi pi-search" severity="secondary" size="small" @click.prevent="showSupplierModal = true" />
-            </div>
-            <div v-else class="flex flex-col items-center py-6 text-gray-400">
-              <p class="mb-4">No hay proveedor seleccionado</p>
-              <Button label="Seleccionar Proveedor" icon="pi pi-search" @click.prevent="showSupplierModal = true" />
-            </div>
-          </Panel>
+      <div class="flex flex-col h-full bg-gradient-to-b from-slate-50 to-white">
+        <div class="flex-1 overflow-y-auto p-4 md:p-8 space-y-8 custom-scrollbar">
+          <!-- Componente de Proveedor -->
+          <PurchaseSupplierForm
+            v-model="supplier"
+            :readOnly="readOnly"
+            @select="(s) => supplierId = s.id"
+          />
 
-          <!-- Sección Productos -->
-          <Panel header="Productos">
-            <template #icons>
-              <Button v-if="!readOnly" icon="pi pi-plus" label="Agregar" size="small" @click.prevent="showProductModal = true" />
-            </template>
-            
-            <DataTable :value="items" class="p-datatable-sm" v-if="items.length > 0">
-              <Column field="product_name" header="Producto"></Column>
-              <Column field="qty" header="Cant.">
-                <template #body="{ data }">
-                  <InputNumber v-model="data.qty" :disabled="readOnly" :min="1" @update:modelValue="updateItemTotal(data)" size="small" inputClass="w-16" />
-                </template>
-              </Column>
-              <Column field="unit_cost" header="Costo">
-                <template #body="{ data }">
-                  <InputNumber v-model="data.unit_cost" :disabled="readOnly" mode="currency" currency="NIO" locale="es-NI" @update:modelValue="updateItemTotal(data)" size="small" inputClass="w-24" />
-                </template>
-              </Column>
-              <Column field="line_total" header="Subtotal">
-                <template #body="{ data }">{{ formatCurrency(data.line_total) }}</template>
-              </Column>
-              <Column v-if="!readOnly" header="">
-                <template #body="{ index }">
-                  <Button icon="pi pi-times" severity="danger" text rounded @click.prevent="removeItem(index)" />
-                </template>
-              </Column>
-            </DataTable>
-            <div v-else class="flex flex-col items-center py-6 text-gray-400">
-              <p>No hay productos agregados</p>
-            </div>
-          </Panel>
+          <!-- Componente de Tabla de Items -->
+          <PurchaseItemsTable
+            v-model:items="items"
+            :readOnly="readOnly"
+          />
 
-          <!-- Notas -->
-          <Panel header="Notas">
-            <Textarea v-model="notes" :disabled="readOnly" rows="3" class="w-full" placeholder="Observaciones de la compra..." />
-          </Panel>
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
+            <!-- Notas -->
+            <div class="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden">
+               <div class="bg-slate-50 px-5 py-3 border-b border-slate-200 flex items-center gap-2">
+                 <i class="pi pi-align-left text-slate-500"></i>
+                 <span class="font-bold text-slate-700">Observaciones</span>
+               </div>
+               <div class="p-4">
+                 <Textarea 
+                  v-model="notes" 
+                  :disabled="readOnly" 
+                  rows="4" 
+                  class="w-full border-slate-200 focus:border-indigo-500 rounded-lg text-sm" 
+                  placeholder="Escribe aquí cualquier nota relevante sobre esta compra..." 
+                 />
+               </div>
+            </div>
+
+            <!-- Totales -->
+            <PurchaseTotals :total="total" />
+          </div>
         </div>
 
         <!-- Footer del Drawer -->
-        <div class="p-4 border-t border-gray-200 bg-gray-50 flex justify-between items-center">
-          <div class="text-2xl font-bold">
-            Total: <span class="text-indigo-600">{{ formatCurrency(total) }}</span>
-          </div>
-          <div class="flex gap-2">
-            <template v-if="currentPurchase?.status === 'draft'">
-              <Button label="Guardar" icon="pi pi-save" :loading="isSaving" @click.prevent="savePurchase" />
-              <Button v-if="currentPurchase.id" label="Completar" icon="pi pi-check" severity="success" :loading="isSaving" @click.prevent="confirmFinalize" />
-              <Button v-if="currentPurchase.id" icon="pi pi-trash" severity="danger" text @click.prevent="confirmDeletePurchase" />
-            </template>
-            <template v-else>
-              <Button label="Editar (Borrador)" icon="pi pi-pencil" severity="warning" @click.prevent="revertToDraft" />
-            </template>
-          </div>
+        <div class="p-6 border-t border-slate-200 bg-white flex flex-wrap justify-center md:justify-end items-center gap-3">
+          <template v-if="currentPurchase?.status === 'draft'">
+            <Button 
+              label="Guardar Borrador" 
+              icon="pi pi-save" 
+              class="bg-indigo-600 text-white hover:bg-indigo-700 border-0 shadow-md py-2 px-6 rounded-xl font-bold"
+              :loading="isSaving" 
+              @click.prevent="savePurchase" 
+            />
+            <Button 
+              v-if="currentPurchase.id" 
+              label="Finalizar Compra" 
+              icon="pi pi-check-circle" 
+              severity="success" 
+              class="shadow-md py-2 px-6 rounded-xl font-bold"
+              :loading="isSaving" 
+              @click.prevent="confirmFinalize" 
+            />
+            <Button 
+              v-if="currentPurchase.id" 
+              icon="pi pi-trash" 
+              severity="danger" 
+              text 
+              rounded
+              class="hover:bg-red-50"
+              @click.prevent="confirmDeletePurchase" 
+              v-tooltip.top="'Eliminar borrador'"
+            />
+          </template>
+          <template v-else>
+            <Button 
+              label="Convertir a Borrador (Editar)" 
+              icon="pi pi-pencil" 
+              severity="warning" 
+              class="shadow-md py-2 px-6 rounded-xl font-bold"
+              @click.prevent="revertToDraft" 
+            />
+            <Button 
+              label="Cerrar" 
+              icon="pi pi-times" 
+              severity="secondary" 
+              variant="outlined"
+              class="py-2 px-6 rounded-xl font-bold"
+              @click.prevent="drawerVisible = false" 
+            />
+          </template>
         </div>
       </div>
     </Drawer>
 
-    <!-- Modales -->
-    <Dialog v-model:visible="showSupplierModal" header="Buscar Proveedor" modal class="w-full max-w-lg">
-      <div class="space-y-4 pt-2">
-        <IconField iconPosition="left">
-          <InputIcon class="pi pi-search" />
-          <InputText v-model="supplierSearch" placeholder="Buscar por nombre o RUC..." class="w-full" @input="onSupplierSearch" />
-        </IconField>
-        <Listbox :options="suppliers" optionLabel="name" class="w-full" @change="selectSupplier" />
-      </div>
-    </Dialog>
-
-    <Dialog v-model:visible="showProductModal" header="Agregar Producto" modal class="w-full max-w-lg">
-      <div class="space-y-4 pt-2">
-        <IconField iconPosition="left">
-          <InputIcon class="pi pi-search" />
-          <InputText v-model="productSearch" placeholder="Buscar producto..." class="w-full" @input="onProductSearch" />
-        </IconField>
-        <Listbox :options="foundProducts" optionLabel="nombre" class="w-full" @change="addProduct" />
-      </div>
-    </Dialog>
+    <!-- Diálogo de confirmación global -->
+    <ConfirmDialog></ConfirmDialog>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
 import { 
   listPurchases, 
@@ -175,10 +237,9 @@ import {
   finalizePurchase,
   deletePurchase 
 } from '../services/compras'
-import { searchSuppliers } from '../services/proveedores'
-import { getProductos } from '../services/productos'
 import { formatCurrency, calculatePurchaseTotal } from '../utils/calculations'
-import { handleError, showSuccess } from '../utils/errorHandler'
+import { handleError, showSuccess, showWarning } from '../utils/errorHandler'
+import { useConfirm } from 'primevue/useconfirm'
 import { business } from '../config/business'
 import { printPurchase } from '../utils/printPurchase'
 
@@ -187,23 +248,25 @@ import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Drawer from 'primevue/drawer'
 import Tag from 'primevue/tag'
-import Panel from 'primevue/panel'
-import InputNumber from 'primevue/inputnumber'
-import InputText from 'primevue/inputtext'
-import IconField from 'primevue/iconfield'
-import InputIcon from 'primevue/inputicon'
-import Dialog from 'primevue/dialog'
-import Listbox from 'primevue/listbox'
 import Textarea from 'primevue/textarea'
 import Select from 'primevue/select'
+import ConfirmDialog from 'primevue/confirmdialog'
+import Tooltip from 'primevue/tooltip'
+
+// Nuevos componentes
+import PurchaseSupplierForm from '../components/purchase/PurchaseSupplierForm.vue'
+import PurchaseItemsTable from '../components/purchase/PurchaseItemsTable.vue'
+import PurchaseTotals from '../components/purchase/PurchaseTotals.vue'
 
 const queryClient = useQueryClient()
+const confirm = useConfirm()
+const vTooltip = Tooltip
 
 // Estados de la lista
 const statusFilter = ref('all')
 const statusOptions = [
-  { label: 'Todas', value: 'all' },
-  { label: 'Borradores', value: 'draft' },
+  { label: 'Todas las compras', value: 'all' },
+  { label: 'Sólo Borradores', value: 'draft' },
   { label: 'Completadas', value: 'completed' }
 ]
 
@@ -229,15 +292,6 @@ const isSaving = ref(false)
 
 const readOnly = computed(() => currentPurchase.value?.status !== 'draft')
 const total = computed(() => calculatePurchaseTotal(items.value))
-
-// Modales de búsqueda
-const showSupplierModal = ref(false)
-const supplierSearch = ref('')
-const suppliers = ref([])
-
-const showProductModal = ref(false)
-const productSearch = ref('')
-const foundProducts = ref([])
 
 // Funciones
 const statusLabel = (s) => ({
@@ -281,58 +335,10 @@ const openPurchase = async (p) => {
   }
 }
 
-const onSupplierSearch = async () => {
-  if (supplierSearch.value.length < 2) return
-  suppliers.value = await searchSuppliers(supplierSearch.value)
-}
-
-const selectSupplier = (e) => {
-  const s = e.value
-  if (!s) return
-  supplierId.value = s.id
-  supplier.value = { ...s }
-  showSupplierModal.value = false
-}
-
-const onProductSearch = async () => {
-  if (productSearch.value.length < 2) return
-  const res = await getProductos({ search: productSearch.value })
-  foundProducts.value = res.data
-}
-
-const addProduct = (e) => {
-  const p = e.value
-  if (!p) return
-  
-  const existing = items.value.find(i => i.product_id === p.id)
-  if (existing) {
-    existing.qty++
-    existing.line_total = existing.qty * existing.unit_cost
-  } else {
-    items.value.push({
-      id: crypto.randomUUID(),
-      product_id: p.id,
-      product_name: p.nombre,
-      qty: 1,
-      unit_cost: 0,
-      line_total: 0
-    })
-  }
-  showProductModal.value = false
-}
-
-const updateItemTotal = (item) => {
-  item.line_total = (item.qty || 0) * (item.unit_cost || 0)
-}
-
-const removeItem = (index) => {
-  items.value.splice(index, 1)
-}
-
 const savePurchase = async () => {
   if (!supplier.value.name) {
-    alert('Selecciona un proveedor')
-    return
+    showWarning('Selecciona un proveedor')
+    return false
   }
   
   try {
@@ -357,53 +363,83 @@ const savePurchase = async () => {
     })
     
     currentPurchase.value = updated
-    showSuccess('Compra guardada')
+    showSuccess('Compra guardada correctamente')
     queryClient.invalidateQueries({ queryKey: ['purchases'] })
+    return true
   } catch (err) {
     handleError(err)
+    return false
   } finally {
     isSaving.value = false
   }
 }
 
-const confirmFinalize = async () => {
-  if (!confirm('¿Deseas completar la compra? Esto actualizará el inventario.')) return
-  
-  try {
-    isSaving.value = true
-    await savePurchase()
-    await finalizePurchase(currentPurchase.value.id)
-    currentPurchase.value.status = 'completed'
-    showSuccess('Compra completada exitosamente')
-    queryClient.invalidateQueries({ queryKey: ['purchases'] })
-  } catch (err) {
-    handleError(err)
-  } finally {
-    isSaving.value = false
-  }
+const confirmFinalize = () => {
+  confirm.require({
+    message: '¿Deseas completar la compra? Esto actualizará el stock de los productos.',
+    header: 'Confirmar Abastecimiento',
+    icon: 'pi pi-exclamation-triangle',
+    acceptLabel: 'Sí, finalizar ingreso',
+    rejectLabel: 'Cancelar',
+    accept: async () => {
+      try {
+        isSaving.value = true
+        const saved = await savePurchase()
+        if (!saved) return
+
+        await finalizePurchase(currentPurchase.value.id)
+        currentPurchase.value.status = 'completed'
+        showSuccess('Abastecimiento completado exitosamente')
+        queryClient.invalidateQueries({ queryKey: ['purchases'] })
+      } catch (err) {
+        handleError(err)
+      } finally {
+        isSaving.value = false
+      }
+    }
+  })
 }
 
-const revertToDraft = async () => {
-  if (!confirm('¿Convertir a borrador para editar? El stock no se revertirá automáticamente.')) return
-  try {
-    const updated = await patchPurchase(currentPurchase.value.id, { status: 'draft' })
-    currentPurchase.value = updated
-    showSuccess('Ahora puedes editar la compra')
-  } catch (err) {
-    handleError(err)
-  }
+const revertToDraft = () => {
+  confirm.require({
+    message: '¿Convertir a borrador para editar? Ten en cuenta que el stock regresará a su estado anterior si eliminas productos, pero no automáticamente hoy.',
+    header: 'Confirmar Edición',
+    icon: 'pi pi-info-circle',
+    severity: 'warn',
+    acceptLabel: 'Activar Edición',
+    rejectLabel: 'Cancelar',
+    accept: async () => {
+      try {
+        const updated = await patchPurchase(currentPurchase.value.id, { status: 'draft' })
+        currentPurchase.value = updated
+        showSuccess('La compra ahora es un borrador y puede ser editada')
+        queryClient.invalidateQueries({ queryKey: ['purchases'] })
+      } catch (err) {
+        handleError(err)
+      }
+    }
+  })
 }
 
 const confirmDeletePurchase = async () => {
-  if (!confirm('¿Eliminar esta compra permanentemente?')) return
-  try {
-    await deletePurchase(currentPurchase.value.id)
-    showSuccess('Compra eliminada')
-    drawerVisible.value = false
-    queryClient.invalidateQueries({ queryKey: ['purchases'] })
-  } catch (err) {
-    handleError(err)
-  }
+  confirm.require({
+    message: '¿Eliminar este borrador de compra permanentemente?',
+    header: 'Borrar Borrador',
+    icon: 'pi pi-trash',
+    acceptLabel: 'Sí, eliminar',
+    rejectLabel: 'No',
+    acceptClass: 'p-button-danger',
+    accept: async () => {
+      try {
+        await deletePurchase(currentPurchase.value.id)
+        showSuccess('Borrador eliminado')
+        drawerVisible.value = false
+        queryClient.invalidateQueries({ queryKey: ['purchases'] })
+      } catch (err) {
+        handleError(err)
+      }
+    }
+  })
 }
 
 const handlePrint = async (p) => {
@@ -416,6 +452,19 @@ const handlePrint = async (p) => {
 }
 
 onMounted(() => {
-  // Inicializaciones si son necesarias
 })
 </script>
+
+<style scoped>
+:deep(.p-drawer-content) {
+  padding: 0 !important;
+}
+
+.modern-table :deep(.p-datatable-thead > tr > th) {
+  @apply bg-slate-50 text-slate-600 font-bold uppercase text-[11px] tracking-wider;
+}
+
+.modern-table :deep(.p-datatable-tbody > tr > td) {
+  @apply py-4;
+}
+</style>

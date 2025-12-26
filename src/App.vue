@@ -1,4 +1,5 @@
 <template>
+  <Toast />
   <div v-if="loading" class="flex items-center justify-center h-screen bg-slate-50">
     <div class="flex flex-col items-center gap-4">
       <div class="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
@@ -9,12 +10,25 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { supabase } from './lib/supabaseClient'
 import { useRouter } from 'vue-router'
+import { useToastStore } from './stores/toastStore'
+import { useToast } from 'primevue/usetoast'
+import Toast from 'primevue/toast'
 
 const router = useRouter()
 const loading = ref(true)
+const toastStore = useToastStore()
+const toast = useToast()
+
+// Watch for toast triggers in the store
+watch(() => toastStore.toastTrigger, (newToast) => {
+  if (newToast) {
+    toast.add(newToast)
+    toastStore.toastTrigger = null // reset after showing
+  }
+})
 
 onMounted(async () => {
   console.log('App: Verificando sesión inicial...')

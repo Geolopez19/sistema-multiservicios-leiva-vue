@@ -1,6 +1,8 @@
+import { useToastStore } from '../stores/toastStore'
 import jsPDF from 'jspdf'
 
 export async function downloadInvoicePDF({ order, items, business }) {
+  const toastStore = useToastStore()
   try {
     const isFactura = String(order?.status || '').toLowerCase() === 'paid'
     const titulo = isFactura ? 'Factura' : 'Oferta'
@@ -149,7 +151,7 @@ export async function downloadInvoicePDF({ order, items, business }) {
     return Promise.resolve()
   } catch (error) {
     console.error('Error al generar PDF:', error)
-    alert('Error al generar el PDF: ' + error.message)
+    toastStore.showError('Error PDF', error.message)
     return Promise.reject(error)
   }
 }

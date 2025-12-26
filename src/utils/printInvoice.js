@@ -1,4 +1,7 @@
+import { useToastStore } from '../stores/toastStore'
+
 export async function printInvoice({ order, items, business }) {
+  const toastStore = useToastStore()
   try {
     const isFactura = String(order?.status || '').toLowerCase() === 'paid'
     const titulo = isFactura ? 'Factura' : 'Oferta'
@@ -19,7 +22,7 @@ export async function printInvoice({ order, items, business }) {
     // Abrir ventana con about:blank (no recarga la página principal)
     const win = window.open('about:blank', '_blank', 'width=800,height=600,toolbar=no,menubar=no,location=no')
     if (!win) { 
-      alert('Permite las ventanas emergentes para imprimir.')
+      toastStore.showWarn('Bloqueador de Ventanas', 'Permite las ventanas emergentes para imprimir.')
       return Promise.resolve() 
     }
     
@@ -34,7 +37,7 @@ export async function printInvoice({ order, items, business }) {
     return Promise.resolve()
   } catch (error) {
     console.error('Error en printInvoice:', error)
-    alert('Error al generar la impresión: ' + error.message)
+    toastStore.showError('Error de Impresión', error.message)
     return Promise.reject(error)
   }
 }

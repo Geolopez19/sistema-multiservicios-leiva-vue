@@ -3,6 +3,8 @@ import { createPinia } from 'pinia'
 import { VueQueryPlugin } from '@tanstack/vue-query'
 import PrimeVue from 'primevue/config'
 import Aura from '@primevue/themes/aura'
+import ConfirmationService from 'primevue/confirmationservice'
+import ToastService from 'primevue/toastservice'
 import router from './router'
 import App from './App.vue'
 
@@ -22,11 +24,13 @@ try {
           preset: Aura,
           options: {
               prefix: 'p',
-              darkModeSelector: 'system',
+              darkModeSelector: '.none',
               cssLayer: false
           }
       }
   })
+  app.use(ConfirmationService)
+  app.use(ToastService)
 
   app.mount('#app')
   console.log('--- App Vue Montada correctamente ---')
