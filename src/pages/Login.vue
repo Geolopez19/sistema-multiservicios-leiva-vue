@@ -6,11 +6,11 @@
           <Package class="w-8 h-8 text-white" />
         </div>
         <h1 class="text-2xl font-bold text-slate-800">Multiservicios Leiva</h1>
-        <p class="text-slate-500">Bienvenido, ingresa tus credenciales</p>
+        <p class="text-slate-500">{{ isRecoveryMode ? 'Establece tu nueva contraseña' : 'Bienvenido, ingresa tus credenciales' }}</p>
       </div>
 
-      <form @submit.prevent="handleLogin" class="space-y-6">
-        <div>
+      <form @submit.prevent="handleSubmit" class="space-y-6">
+        <div v-if="!isRecoveryMode">
           <label class="block text-sm font-medium text-slate-700 mb-1">Correo electrónico</label>
           <div class="relative">
             <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
@@ -27,7 +27,7 @@
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-slate-700 mb-1">Contraseña</label>
+          <label class="block text-sm font-medium text-slate-700 mb-1">{{ isRecoveryMode ? 'Nueva Contraseña' : 'Contraseña' }}</label>
           <div class="relative">
             <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
               <Lock class="w-5 h-5" />
@@ -38,6 +38,7 @@
               placeholder="••••••••"
               class="block w-full pl-10 pr-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-slate-50"
               required 
+              :minlength="isRecoveryMode ? 6 : undefined"
             />
           </div>
         </div>
@@ -48,7 +49,7 @@
           class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
         >
           <Loader v-if="loading" class="w-5 h-5 animate-spin mr-2" />
-          {{ loading ? 'Iniciando sesión...' : 'Entrar al sistema' }}
+          {{ loading ? (isRecoveryMode ? 'Actualizando...' : 'Iniciando sesión...') : (isRecoveryMode ? 'Actualizar Contraseña' : 'Entrar al sistema') }}
         </button>
 
         <div v-if="errorMessage" class="p-3 rounded-lg bg-red-50 border border-red-200 flex items-start gap-3">
@@ -61,16 +62,67 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { supabase } from '../lib/supabaseClient'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { Mail, Lock, Package, AlertCircle, Loader } from 'lucide-vue-next'
 
 const router = useRouter()
+const route = useRoute()
 const email = ref('')
 const password = ref('')
 const loading = ref(false)
 const errorMessage = ref('')
+const isRecoveryMode = ref(false)
+
+onMounted(() => {
+  // Check if we are in recovery mode via URL
+  if (route.query.recovery === 'true') {
+    isRecoveryMode.value = true
+    console.log('Login: Modo recuperación activado por URL')
+  }
+
+  // Also listen for auth state change to switching to recovery mode
+  supabase.auth.onAuthStateChange((event, session) => {
+    if (event === 'PASSWORD_RECOVERY') {
+      isRecoveryMode.value = true
+      console.log('Login: Modo recuperación activado por Evento')
+    }
+  })
+})
+
+const handleSubmit = async () => {
+  if (isRecoveryMode.value) {
+    await handlePasswordUpdate()
+  } else {
+    await handleLogin()
+  }
+}
+
+const handlePasswordUpdate = async () => {
+  try {
+    loading.value = true
+    errorMessage.value = ''
+    console.log('Login: Actualizando contraseña...')
+    
+    const { error } = await supabase.auth.updateUser({ 
+      password: password.value 
+    })
+
+    if (error) throw error
+
+    alert('Contraseña actualizada correctamente. Ingresa de nuevo con tu nueva contraseña.')
+    isRecoveryMode.value = false
+    password.value = ''
+    router.push('/')
+    
+  } catch (error) {
+    console.error('Password Update Error:', error)
+    errorMessage.value = 'No se pudo actualizar la contraseña: ' + error.message
+  } finally {
+    loading.value = false
+  }
+}
 
 const handleLogin = async () => {
   try {

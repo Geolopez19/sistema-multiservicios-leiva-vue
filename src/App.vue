@@ -51,6 +51,9 @@ onMounted(async () => {
     } else if (event === 'SIGNED_IN' && router.currentRoute.value.path === '/login') {
       // Solo redirigir a inicio si estamos en login
       router.push('/')
+    } else if (event === 'PASSWORD_RECOVERY') {
+       console.log('App: Recuperación de contraseña detectada')
+       router.push('/login?recovery=true')
     }
     // Ignorar INITIAL_SESSION y otros eventos que no requieren navegación
   })

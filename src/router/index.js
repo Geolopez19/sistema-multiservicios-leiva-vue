@@ -81,7 +81,7 @@ router.beforeEach(async (to, from, next) => {
     if (to.meta.requiresAuth && !session) {
       console.log('Acceso denegado: Redirigiendo a /login')
       next('/login')
-    } else if (to.path === '/login' && session) {
+    } else if (to.path === '/login' && session && !to.query.recovery) {
       console.log('Ya hay sesión: Redirigiendo a /')
       next('/')
     } else {

@@ -43,20 +43,25 @@ const toggleSidebar = () => {
   isCollapsed.value = !isCollapsed.value
 }
 
+const isLoadingProfile = ref(true)
+
 onMounted(async () => {
-  const { data: { user: authUser } } = await supabase.auth.getUser()
-  user.value = authUser
-  
-  if (authUser) {
-    try {
+  try {
+    const { data: { user: authUser } } = await supabase.auth.getUser()
+    user.value = authUser
+    
+    if (authUser) {
       userProfile.value = await getUserByAuthId(authUser.id)
-    } catch (e) {
-      console.error('Error fetching user profile:', e)
     }
+  } catch (e) {
+    console.error('Error fetching user profile:', e)
+  } finally {
+    isLoadingProfile.value = false
   }
 })
 
 const displayName = computed(() => {
+  if (isLoadingProfile.value) return '...' // Or return '' to show nothing while loading
   if (userProfile.value?.nombre) return userProfile.value.nombre
   return user.value?.email || '...'
 })

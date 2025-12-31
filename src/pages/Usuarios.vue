@@ -99,6 +99,21 @@
           <label class="font-semibold text-sm">Rol</label>
           <Select v-model="formData.rol" :options="rolOptions.filter(o => o.value !== 'all')" optionLabel="label" optionValue="value" />
         </div>
+        
+        <div v-if="modal.modo === 'editar'" class="flex flex-col gap-2 p-3 bg-blue-50 rounded-lg border border-blue-100">
+           <label class="font-bold text-xs text-blue-800 uppercase">Seguridad</label>
+           <Button 
+            label="Enviar Correo de Recuperación" 
+            icon="pi pi-envelope" 
+            severity="info" 
+            outlined 
+            size="small"
+            class="w-full"
+            @click="sendRecoveryEmail"
+            :loading="isSendingRecovery"
+           />
+           <small class="text-blue-600 leading-tight">Envía un enlace al usuario para que restablezca su contraseña.</small>
+        </div>
         <div class="flex items-center gap-2 mt-2">
           <Checkbox v-model="formData.activo" :binary="true" inputId="activo" />
           <label for="activo" class="text-sm">Usuario Activo</label>
@@ -117,6 +132,7 @@ import { ref, computed, onMounted } from 'vue'
 import { listUsers, deleteUser, toggleUserStatus, isCurrentUserAdmin, createUser, updateUser } from '../services/usuarios'
 import { handleError, showSuccess } from '../utils/errorHandler'
 import { Users, Lock } from 'lucide-vue-next'
+import { supabase } from '../lib/supabaseClient'
 
 import Button from 'primevue/button'
 import DataTable from 'primevue/datatable'
@@ -133,6 +149,7 @@ const isAdmin = ref(false)
 const checkingAuth = ref(true)
 const isLoading = ref(false)
 const isSaving = ref(false)
+const isSendingRecovery = ref(false)
 const rolFilter = ref('all')
 
 const rolOptions = [
@@ -225,6 +242,25 @@ const confirmDelete = async (user) => {
     loadUsers()
   } catch (err) {
     handleError(err)
+  }
+}
+
+const sendRecoveryEmail = async () => {
+  if (!formData.value.email) return
+  
+  try {
+    isSendingRecovery.value = true
+    const { error } = await supabase.auth.resetPasswordForEmail(formData.value.email, {
+      redirectTo: window.location.origin + '/login?recovery=true'
+    })
+    
+    if (error) throw error
+    
+    showSuccess(`Correo de recuperación enviado a ${formData.value.email}`)
+  } catch (err) {
+    handleError(err)
+  } finally {
+    isSendingRecovery.value = false
   }
 }
 
