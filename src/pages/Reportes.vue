@@ -1,6 +1,15 @@
 <template>
   <div class="p-6">
-    <div v-if="!isAdmin" class="flex items-center justify-center h-[60vh]">
+
+    <!-- Estado de Carga Inicial -->
+    <div v-if="checkingAuth" class="flex items-center justify-center h-[60vh]">
+      <div class="flex flex-col items-center gap-4">
+        <i class="pi pi-spin pi-spinner text-4xl text-indigo-600"></i>
+      </div>
+    </div>
+
+    <!-- Acceso Denegado -->
+    <div v-else-if="!isAdmin" class="flex items-center justify-center h-[60vh]">
       <div class="text-center p-8 bg-white rounded-2xl shadow-sm border border-red-100 max-w-md">
         <div class="bg-red-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
           <Lock class="w-8 h-8 text-red-500" />
@@ -63,27 +72,16 @@
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <!-- Gráfico Ventas por Día -->
-        <Card class="shadow-sm border border-gray-100">
-          <template #title>Ventas por Día</template>
-          <template #content>
-            <div v-if="ventasPorDia.length > 0" class="flex items-end gap-1 h-48 overflow-x-auto pb-8">
-              <div v-for="(dia, idx) in ventasPorDia" :key="idx" class="flex-1 min-w-[30px] flex flex-col items-center group">
-                <div 
-                  class="w-full bg-indigo-500 rounded-t transition-all hover:bg-indigo-600 relative"
-                  :style="{ height: `${(dia.total / maxVentas) * 100}%` }"
-                >
-                  <div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-[10px] py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
-                    {{ formatCurrency(dia.total) }}
-                  </div>
-                </div>
-                <div class="text-[10px] text-gray-400 mt-2 rotate-[-45deg] origin-top-left whitespace-nowrap">
-                  {{ new Date(dia.fecha).toLocaleDateString(undefined, { day: '2-digit', month: '2-digit' }) }}
-                </div>
-              </div>
+        <!-- Gráfico Ventas vs Compras -->
+        <Card class="shadow-sm border border-gray-100 col-span-1 lg:col-span-2">
+          <template #title>
+            <div class="flex items-center justify-between">
+              <span>Tendencia de Ingresos vs Gastos</span>
             </div>
-            <div v-else class="h-48 flex items-center justify-center text-gray-400 italic">
-              No hay datos para este período
+          </template>
+          <template #content>
+            <div class="h-[24rem]">
+              <Chart type="bar" :data="chartData" :options="chartOptions" class="h-full w-full" />
             </div>
           </template>
         </Card>
@@ -103,19 +101,19 @@
         </Card>
 
         <!-- Stock Bajo -->
-        <Card class="shadow-sm border border-gray-100 lg:col-span-2">
+        <Card class="shadow-sm border border-gray-100">
           <template #title><span class="text-red-600">⚠️ Alerta de Stock Bajo</span></template>
           <template #content>
-            <DataTable :value="productosStockBajo" stripedRows class="p-datatable-sm">
+            <DataTable :value="productosStockBajo" stripedRows class="p-datatable-sm" :rows="5" paginator>
               <Column field="nombre" header="Producto"></Column>
-              <Column field="stock" header="Stock Actual" class="text-right font-bold">
+              <Column field="stock" header="Stock" class="text-right font-bold w-20">
                 <template #body="{ data }">
                   <span :class="data.stock <= 5 ? 'text-red-600' : 'text-orange-500'">{{ data.stock }}</span>
                 </template>
               </Column>
-              <Column header="Nivel">
+              <Column header="Estado" class="w-24 text-center">
                 <template #body="{ data }">
-                  <Tag :value="data.stock <= 5 ? 'Crítico' : 'Bajo'" :severity="data.stock <= 5 ? 'danger' : 'warn'" />
+                  <Tag :value="data.stock <= 5 ? 'Crítico' : 'Bajo'" :severity="data.stock <= 5 ? 'danger' : 'warn'" class="text-[10px]" />
                 </template>
               </Column>
             </DataTable>
@@ -148,9 +146,11 @@ import Card from 'primevue/card'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Tag from 'primevue/tag'
+import Chart from 'primevue/chart'
 
 // Estados
 const isAdmin = ref(false)
+const checkingAuth = ref(true)
 const isLoading = ref(false)
 const periodo = ref('mes-actual')
 const fechaInicio = ref(null)
@@ -159,18 +159,37 @@ const fechaFin = ref(null)
 const resumen = ref({ ingresos: 0, gastos: 0, ganancia: 0, totalVentas: 0, totalCompras: 0 })
 const productosMasVendidos = ref([])
 const productosStockBajo = ref([])
-const ventasPorDia = ref([])
+
+// Chart Data
+const chartData = ref({})
+const chartOptions = ref({
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: {
+      position: 'bottom'
+    }
+  },
+  scales: {
+    y: {
+      beginAtZero: true,
+      grid: {
+        color: '#f3f4f6'
+      }
+    },
+    x: {
+      grid: {
+        display: false
+      }
+    }
+  }
+})
 
 const periodoOptions = [
   { label: 'Mes Actual', value: 'mes-actual' },
   { label: 'Mes Anterior', value: 'mes-anterior' },
   { label: 'Personalizado', value: 'personalizado' }
 ]
-
-// Computed
-const maxVentas = computed(() => {
-  return Math.max(...ventasPorDia.value.map(v => v.total), 1)
-})
 
 // Funciones
 const loadData = async () => {
@@ -191,8 +210,32 @@ const loadData = async () => {
     
     const data = await getReportesCompletos(inicio, fin)
     resumen.value = data.resumen
-    ventasPorDia.value = data.ventasPorDia || []
     productosMasVendidos.value = data.productosMasVendidos || []
+    
+    // Preparar datos para el gráfico
+    const ventas = data.ventasPorDia || []
+    const compras = data.comprasPorDia || []
+    
+    // Unificar fechas
+    const fechas = [...new Set([...ventas.map(v => v.fecha), ...compras.map(c => c.fecha)])].sort()
+    
+    chartData.value = {
+      labels: fechas.map(f => new Date(f).toLocaleDateString(undefined, { day: '2-digit', month: '2-digit' })),
+      datasets: [
+        {
+          label: 'Ingresos (Ventas)',
+          backgroundColor: '#4f46e5', // indigo-600
+          borderRadius: 4,
+          data: fechas.map(f => ventas.find(v => v.fecha === f)?.total || 0)
+        },
+        {
+          label: 'Gastos (Compras)',
+          backgroundColor: '#ef4444', // red-500
+          borderRadius: 4,
+          data: fechas.map(f => compras.find(c => c.fecha === f)?.total || 0)
+        }
+      ]
+    }
     
     const stockBajo = await getProductosStockBajo(15)
     productosStockBajo.value = stockBajo
@@ -204,13 +247,21 @@ const loadData = async () => {
 }
 
 watch([periodo, fechaInicio, fechaFin], () => {
-  loadData()
+  if (isAdmin.value) {
+    loadData()
+  }
 })
 
 onMounted(async () => {
-  isAdmin.value = await isCurrentUserAdmin()
-  if (isAdmin.value) {
-    loadData()
+  try {
+    isAdmin.value = await isCurrentUserAdmin()
+    if (isAdmin.value) {
+      await loadData()
+    }
+  } catch (e) {
+    console.error(e)
+  } finally {
+    checkingAuth.value = false
   }
 })
 </script>

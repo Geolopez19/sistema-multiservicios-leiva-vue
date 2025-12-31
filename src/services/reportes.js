@@ -150,31 +150,60 @@ export async function getResumenFinanciero(fechaInicio, fechaFin) {
 }
 
 export async function getReportesCompletos(fechaInicio, fechaFin) {
+  // Intentar usar RPC primero
   try {
     const { data, error } = await supabase.rpc('get_reportes_completos', {
       p_fecha_inicio: fechaInicio,
       p_fecha_fin: fechaFin
     })
     
-    if (error) throw error
-    
-    const resumenData = data?.resumen || {}
-    const resumen = {
-      ingresos: Number(resumenData.ingresos || 0),
-      gastos: Number(resumenData.gastos || 0),
-      ganancia: Number(resumenData.ganancia || 0),
-      totalVentas: Number(resumenData.totalVentas || 0),
-      totalCompras: Number(resumenData.totalCompras || 0)
+    if (!error && data) {
+      const resumenData = data.resumen || {}
+      return {
+        resumen: {
+          ingresos: Number(resumenData.ingresos || 0),
+          gastos: Number(resumenData.gastos || 0),
+          ganancia: Number(resumenData.ganancia || 0),
+          totalVentas: Number(resumenData.totalVentas || 0),
+          totalCompras: Number(resumenData.totalCompras || 0)
+        },
+        ventasPorDia: data.ventas_por_dia || data.ventasPorDia || [],
+        comprasPorDia: data.compras_por_dia || data.comprasPorDia || [],
+        productosMasVendidos: data.productos_mas_vendidos || data.productosMasVendidos || []
+      }
     }
-    
+  } catch (err) {
+    console.warn('RPC get_reportes_completos falló, usando cálculo manual:', err)
+  }
+
+  // Fallback: Cálculo manual cliente-side
+  try {
+    const [ventas, compras, ventasPorDia, comprasPorDia, productosMasVendidos, stockBajo] = await Promise.all([
+      getVentasPorFecha(fechaInicio, fechaFin),
+      getComprasPorFecha(fechaInicio, fechaFin),
+      getVentasPorDia(fechaInicio, fechaFin),
+      getComprasPorDia(fechaInicio, fechaFin),
+      getProductosMasVendidos(fechaInicio, fechaFin),
+      getProductosStockBajo(15)
+    ])
+
+    const ingresos = ventas.reduce((sum, v) => sum + Number(v.total || 0), 0)
+    const gastos = compras.reduce((sum, c) => sum + Number(c.total || 0), 0)
+
     return {
-      resumen,
-      ventasPorDia: data.ventas_por_dia || data.ventasPorDia || [],
-      comprasPorDia: data.compras_por_dia || data.comprasPorDia || [],
-      productosMasVendidos: data.productos_mas_vendidos || data.productosMasVendidos || []
+      resumen: {
+        ingresos,
+        gastos,
+        ganancia: ingresos - gastos,
+        totalVentas: ventas.length,
+        totalCompras: compras.length
+      },
+      ventasPorDia,
+      comprasPorDia,
+      productosMasVendidos
     }
   } catch (error) {
-    console.error('Error obteniendo reportes completos:', error)
+    console.error('Error generando reportes manuales:', error)
     throw error
   }
 }

@@ -1,6 +1,13 @@
 <template>
   <div class="p-6">
-    <div v-if="!isAdmin" class="flex items-center justify-center h-[60vh]">
+
+    <div v-if="checkingAuth" class="flex items-center justify-center h-[60vh]">
+      <div class="flex flex-col items-center gap-4">
+        <i class="pi pi-spin pi-spinner text-4xl text-indigo-600"></i>
+      </div>
+    </div>
+
+    <div v-else-if="!isAdmin" class="flex items-center justify-center h-[60vh]">
       <div class="text-center p-8 bg-white rounded-2xl shadow-sm border border-red-100 max-w-md">
         <div class="bg-red-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
           <Lock class="w-8 h-8 text-red-500" />
@@ -123,6 +130,7 @@ import Checkbox from 'primevue/checkbox'
 // Estados
 const users = ref([])
 const isAdmin = ref(false)
+const checkingAuth = ref(true)
 const isLoading = ref(false)
 const isSaving = ref(false)
 const rolFilter = ref('all')
@@ -156,7 +164,13 @@ const loadUsers = async () => {
 }
 
 const checkAdmin = async () => {
-  isAdmin.value = await isCurrentUserAdmin()
+  try {
+    isAdmin.value = await isCurrentUserAdmin()
+  } catch (e) {
+    console.error(e)
+  } finally {
+    checkingAuth.value = false
+  }
 }
 
 const openModal = (modo, user = null) => {
@@ -214,8 +228,10 @@ const confirmDelete = async (user) => {
   }
 }
 
-onMounted(() => {
-  checkAdmin()
-  loadUsers()
+onMounted(async () => {
+  await checkAdmin()
+  if (isAdmin.value) {
+    loadUsers()
+  }
 })
 </script>
