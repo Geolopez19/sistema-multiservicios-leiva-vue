@@ -392,12 +392,12 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/vue-query";
 import { listOffers, getOrderItems, cancelOrder } from "../services/ventas";
 import { formatCurrency } from "../utils/calculations";
 import { handleError, showSuccess } from "../utils/errorHandler";
-import { business } from "../config/business";
+import { useBusinessStore } from "../stores/businessStore";
 import { printInvoice } from "../utils/printInvoice";
 import { downloadInvoicePDF } from "../utils/downloadPDF";
 import { useConfirm } from "primevue/useconfirm";
@@ -413,6 +413,7 @@ import ConfirmDialog from "primevue/confirmdialog";
 
 const queryClient = useQueryClient();
 const confirm = useConfirm();
+const businessStore = useBusinessStore();
 
 // Directivas
 const vTooltip = Tooltip;
@@ -521,7 +522,7 @@ const handlePrint = async (order, event) => {
   if (!order) return;
   try {
     const its = await getOrderItems(order.id);
-    await printInvoice({ order, items: its, business });
+    await printInvoice({ order, items: its, business: businessStore.settings });
   } catch (err) {
     handleError(err);
   }
@@ -535,12 +536,17 @@ const handleDownloadPDF = async (order, event) => {
   if (!order) return;
   try {
     const its = await getOrderItems(order.id);
-    await downloadInvoicePDF({ order, items: its, business });
+    await downloadInvoicePDF({ order, items: its, business: businessStore.settings });
     showSuccess("PDF descargado correctamente");
   } catch (err) {
     handleError(err);
   }
 };
+
+
+onMounted(() => {
+  businessStore.fetchSettings();
+});
 </script>
 
 <style scoped>

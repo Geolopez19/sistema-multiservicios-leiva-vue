@@ -244,7 +244,7 @@ import {
 import { formatCurrency, calculatePurchaseTotals } from '../utils/calculations'
 import { handleError, showSuccess, showWarning } from '../utils/errorHandler'
 import { useConfirm } from 'primevue/useconfirm'
-import { business } from '../config/business'
+import { useBusinessStore } from '../stores/businessStore'
 import { printPurchase } from '../utils/printPurchase'
 
 import Button from 'primevue/button'
@@ -285,6 +285,7 @@ const filteredPurchases = computed(() => {
   return purchases.value.filter(p => p.status === statusFilter.value)
 })
 
+const businessStore = useBusinessStore()
 // Estados del detalle
 const drawerVisible = ref(false)
 const currentPurchase = ref(null)
@@ -449,13 +450,14 @@ const confirmDeletePurchase = async () => {
 const handlePrint = async (p) => {
   try {
     const its = await getPurchaseItems(p.id)
-    printPurchase({ purchase: p, items: its, business })
+    printPurchase({ purchase: p, items: its, business: businessStore.settings })
   } catch (err) {
     handleError(err)
   }
 }
 
 onMounted(() => {
+  businessStore.fetchSettings()
 })
 </script>
 

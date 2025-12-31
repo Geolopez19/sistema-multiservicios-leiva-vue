@@ -258,7 +258,8 @@
                 size="small"
                 :loading="isSaving"
                 @click.prevent="saveOffer"
-                class="bg-indigo-600 text-white hover:bg-indigo-700 border-0 shadow-md"
+                class="bg-indigo-600 !text-white hover:bg-indigo-700 border-0 shadow-md"
+                style="color: white !important"
               />
               <Button
                 type="button"
@@ -268,7 +269,8 @@
                 size="small"
                 :loading="isSaving"
                 @click.prevent="handleFacturar"
-                class="shadow-md bg-green-600 hover:bg-green-700 border-0"
+                class="shadow-md bg-green-600 !text-white hover:bg-green-700 border-0"
+                style="color: white !important"
               />
             </template>
             <template v-else-if="currentOrder?.status === 'paid'">
@@ -279,7 +281,8 @@
                 severity="danger"
                 size="small"
                 @click.prevent="handleCancelar"
-                class="shadow-md"
+                class="shadow-md !text-white"
+                style="color: white !important"
               />
             </template>
             <Button
@@ -294,7 +297,8 @@
                 }
               "
               v-if="currentOrder?.id"
-              class="bg-blue-500 hover:bg-blue-600 border-0 text-white"
+              class="bg-blue-500 hover:bg-blue-600 border-0 !text-white"
+              style="color: white !important"
             />
             <Button
               type="button"
@@ -308,7 +312,8 @@
                 }
               "
               v-if="currentOrder?.id"
-              class="bg-blue-600 text-white hover:bg-blue-700 border-0 shadow-md"
+              class="bg-blue-600 !text-white hover:bg-blue-700 border-0 shadow-md"
+              style="color: white !important"
             />
           </div>
         </div>
@@ -321,7 +326,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from "vue";
+import { ref, computed, watch, onMounted } from "vue";
 import { useQuery, useQueryClient } from "@tanstack/vue-query";
 import { useConfirm } from "primevue/useconfirm";
 import {
@@ -335,7 +340,7 @@ import {
 } from "../services/ventas";
 import { formatCurrency, calculateOrderTotals } from "../utils/calculations";
 import { handleError, showSuccess, showWarning } from "../utils/errorHandler";
-import { business } from "../config/business";
+import { useBusinessStore } from "../stores/businessStore";
 import { printInvoice } from "../utils/printInvoice";
 import { downloadInvoicePDF } from "../utils/downloadPDF";
 
@@ -356,6 +361,7 @@ import IconField from "primevue/iconfield";
 import InputIcon from "primevue/inputicon";
 import { FilterMatchMode } from "@primevue/core/api";
 
+const businessStore = useBusinessStore();
 const queryClient = useQueryClient();
 const confirm = useConfirm();
 const vTooltip = Tooltip;
@@ -375,6 +381,10 @@ watch(searchText, (newVal) => {
 const { data: offers = [], isLoading } = useQuery({
   queryKey: ["sales-offers"],
   queryFn: () => listOffers({ limit: 500 }),
+});
+
+onMounted(() => {
+  businessStore.fetchSettings();
 });
 
 // Estados Editor
@@ -535,7 +545,7 @@ const handlePrint = async (order, event) => {
   }
   try {
     const its = await getOrderItems(order.id);
-    await printInvoice({ order, items: its, business });
+    await printInvoice({ order, items: its, business: businessStore.settings });
   } catch (err) {
     handleError(err);
   }
@@ -548,7 +558,7 @@ const handleDownloadPDF = async (order, event) => {
   }
   try {
     const its = await getOrderItems(order.id);
-    await downloadInvoicePDF({ order, items: its, business });
+    await downloadInvoicePDF({ order, items: its, business: businessStore.settings });
     showSuccess("PDF descargado correctamente");
   } catch (err) {
     handleError(err);

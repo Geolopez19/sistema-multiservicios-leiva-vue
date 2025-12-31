@@ -169,7 +169,7 @@ const checkAdmin = async () => {
   } catch (e) {
     console.error(e)
   } finally {
-    checkingAuth.value = false
+    // checkingAuth.value = false // Removed to prevent double loading
   }
 }
 
@@ -229,9 +229,14 @@ const confirmDelete = async (user) => {
 }
 
 onMounted(async () => {
-  await checkAdmin()
-  if (isAdmin.value) {
-    loadUsers()
+  checkingAuth.value = true
+  try {
+    await checkAdmin()
+    if (isAdmin.value) {
+      await loadUsers()
+    }
+  } finally {
+    checkingAuth.value = false
   }
 })
 </script>

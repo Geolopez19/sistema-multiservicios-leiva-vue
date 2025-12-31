@@ -20,7 +20,8 @@
         icon="pi pi-search"
         size="small"
         @click.prevent="showCustomerModal = true"
-        class="bg-indigo-600 text-white hover:bg-indigo-700 border-0 shadow-sm text-sm"
+        class="bg-indigo-600 !text-white hover:bg-indigo-700 border-0 shadow-sm text-sm"
+        style="color: white !important"
       />
     </div>
     <div class="p-4 bg-white">
@@ -102,7 +103,8 @@
              <Button 
                 label="Crear Nuevo" 
                 icon="pi pi-plus" 
-                class="bg-indigo-600 text-white hover:bg-indigo-700 font-bold border-0"
+                class="bg-indigo-600 !text-white hover:bg-indigo-700 font-bold border-0"
+                style="color: white !important"
                 size="small"
                 @click="openCreateModal"
             />
@@ -204,7 +206,8 @@
            <Button 
                 label="Crear Nuevo Cliente" 
                 icon="pi pi-plus" 
-                class="bg-indigo-600 border-indigo-600" 
+                class="bg-indigo-600 border-indigo-600 !text-white" 
+                style="color: white !important"
                 @click="openCreateModal"
             />
         </div>
@@ -262,7 +265,8 @@
                 icon="pi pi-check" 
                 @click="handleCreateCustomer" 
                 :loading="isCreating"
-                class="bg-indigo-600 border-indigo-600"
+                class="bg-indigo-600 border-indigo-600 !text-white"
+                style="color: white !important"
                 :disabled="!newCustomer.name"
             />
         </template>

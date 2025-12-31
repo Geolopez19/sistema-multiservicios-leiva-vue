@@ -24,7 +24,8 @@
         icon="pi pi-plus"
         size="small"
         @click.prevent="showProductModal = true"
-        class="bg-purple-600 text-white hover:bg-purple-700 border-0 shadow-sm text-sm"
+        class="bg-purple-600 !text-white hover:bg-purple-700 border-0 shadow-sm text-sm"
+        style="color: white !important"
       />
     </div>
     <div class="p-4 bg-white">
@@ -120,7 +121,8 @@
           icon="pi pi-plus"
           size="small"
           @click.prevent="showProductModal = true"
-          class="bg-purple-600 text-white hover:bg-purple-700 border-0 shadow-sm mt-3"
+          class="bg-purple-600 !text-white hover:bg-purple-700 border-0 shadow-sm mt-3"
+          style="color: white !important"
         />
       </div>
     </div>
