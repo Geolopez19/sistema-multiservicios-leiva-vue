@@ -96,6 +96,12 @@ body {
   @apply border-indigo-300;
 }
 
+.p-component:disabled,
+.p-disabled,
+.p-inputtext:disabled {
+  @apply opacity-100 bg-slate-100 text-slate-500 border-slate-200 cursor-default !important;
+}
+
 /* Buttons */
 .p-button {
   @apply transition-all duration-200 font-semibold shadow-sm rounded-lg;

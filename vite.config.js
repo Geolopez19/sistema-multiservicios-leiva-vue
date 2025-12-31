@@ -9,5 +9,17 @@ export default defineConfig({
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))
     }
+  },
+  build: {
+    chunkSizeWarningLimit: 1000,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-primevue': ['primevue'],
+          'vendor-primevue-themes': ['@primevue/themes'],
+          'vendor-utils': ['@supabase/supabase-js', '@tanstack/vue-query', 'pinia', 'vue-router', 'lucide-vue-next']
+        }
+      }
+    }
   }
 })

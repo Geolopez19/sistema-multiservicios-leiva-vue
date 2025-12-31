@@ -1,28 +1,36 @@
 <template>
   <div class="max-w-7xl mx-auto">
     <!-- Header con gradiente -->
+    <!-- Header solido -->
+    <!-- Header Gradient -->
     <div
-      class="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl shadow-xl p-8 mb-6"
+      class="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl shadow-xl p-8 mb-8 text-white transition-all hover:shadow-2xl"
     >
-      <div class="flex justify-between items-center">
+      <div class="flex flex-col md:flex-row justify-between items-center gap-6">
         <div>
-          <h1 class="text-3xl font-bold text-white mb-2">Ofertas y Ventas</h1>
-          <p class="text-indigo-100">Gestiona tus cotizaciones y facturas</p>
+          <h1 class="text-4xl font-black mb-2 flex items-center gap-3">
+            <i class="pi pi-file-edit text-3xl opacity-80"></i>
+            Ofertas y Ventas
+          </h1>
+          <p class="text-indigo-100 font-medium">
+            Gestiona tus cotizaciones y facturas
+          </p>
         </div>
         <Button
           type="button"
           label="Crear Oferta"
           icon="pi pi-plus"
           @click.prevent="createOffer"
-          class="bg-white text-indigo-600 hover:bg-indigo-50 border-0 shadow-lg"
+          class="bg-white/20 hover:bg-white/30 !text-white border-white/40 border shadow-lg px-6 font-bold rounded-xl transition-all hover:scale-105 backdrop-blur-md"
           size="large"
+          style="color: white !important;"
         />
       </div>
     </div>
 
     <!-- Historial de Ofertas -->
     <div
-      class="bg-white rounded-2xl shadow-lg border border-indigo-100 overflow-hidden"
+      class="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden"
     >
       <!-- Search Bar -->
       <div
@@ -53,29 +61,62 @@
         :rowClass="() => 'cursor-pointer'"
         class="modern-table"
       >
-        <Column field="number" header="#">
-          <template #body="{ data }">{{ data.number ?? "—" }}</template>
+        <Column field="number" header="#" style="width: 100px">
+          <template #body="{ data }">
+            <span class="font-bold text-slate-800">{{
+              data.number ?? "—"
+            }}</span>
+          </template>
         </Column>
-        <Column field="customer_name" header="Cliente"></Column>
+        <Column field="customer_name" header="Cliente">
+          <template #body="{ data }">
+            <div class="flex items-center gap-2">
+              <div
+                class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-xs font-bold text-indigo-600"
+              >
+                {{ data.customer_name?.charAt(0) || "C" }}
+              </div>
+              <span class="font-medium text-slate-700">{{
+                data.customer_name
+              }}</span>
+            </div>
+          </template>
+        </Column>
         <Column field="status" header="Estado">
           <template #body="{ data }">
             <Tag
               :value="statusLabel(data.status)"
               :severity="statusSeverity(data.status)"
+              class="px-3 py-1 rounded-full uppercase text-[10px]"
             />
           </template>
         </Column>
         <Column field="total" header="Total">
-          <template #body="{ data }">{{ formatCurrency(data.total) }}</template>
+          <template #body="{ data }">
+            <span class="font-bold text-indigo-600">{{
+              formatCurrency(data.total)
+            }}</span>
+          </template>
         </Column>
         <Column field="created_at" header="Fecha">
-          <template #body="{ data }">{{
-            new Date(data.created_at).toLocaleString()
-          }}</template>
-        </Column>
-        <Column header="Acciones">
           <template #body="{ data }">
-            <div class="flex gap-2">
+            <div class="flex flex-col">
+              <span class="text-sm text-slate-700">{{
+                new Date(data.created_at).toLocaleDateString()
+              }}</span>
+              <span class="text-[10px] text-slate-400">{{
+                new Date(data.created_at).toLocaleTimeString()
+              }}</span>
+            </div>
+          </template>
+        </Column>
+        <Column
+          header="Acciones"
+          headerClass="text-center"
+          bodyClass="text-center"
+        >
+          <template #body="{ data }">
+            <div class="flex justify-center gap-1">
               <Button
                 type="button"
                 icon="pi pi-pencil"
@@ -90,11 +131,13 @@
                   }
                 "
                 v-if="data.status === 'draft'"
-                class="hover:bg-blue-50"
+                v-tooltip.top="'Editar'"
               />
               <Button
                 type="button"
                 icon="pi pi-eye"
+                severity="secondary"
+                text
                 rounded
                 @click="
                   (e) => {
@@ -104,11 +147,13 @@
                   }
                 "
                 v-else
-                class="!bg-blue-500 hover:!bg-blue-600 border-0"
+                v-tooltip.top="'Ver detalles'"
               />
               <Button
                 type="button"
                 icon="pi pi-print"
+                severity="help"
+                text
                 rounded
                 @click="
                   (e) => {
@@ -117,8 +162,7 @@
                     handlePrint(data, e);
                   }
                 "
-                v-tooltip.top="'Vista previa e imprimir'"
-                class="!bg-blue-600 hover:!bg-blue-700 border-0"
+                v-tooltip.top="'Imprimir'"
               />
               <Button
                 type="button"
@@ -134,7 +178,6 @@
                   }
                 "
                 v-tooltip.top="'Descargar PDF'"
-                class="hover:bg-green-50"
               />
             </div>
           </template>
@@ -152,31 +195,37 @@
       style="width: 70vw; max-width: 1100px"
     >
       <template #header>
-        <div class="flex items-center justify-between w-full">
-          <div class="flex items-center gap-4">
-            <div
-              class="bg-indigo-50 p-3 rounded-xl border border-indigo-100/50"
-            >
-              <i
-                :class="
-                  currentOrder?.status === 'paid'
-                    ? 'pi pi-receipt'
-                    : 'pi pi-file-edit'
-                "
-                class="text-indigo-600 text-3xl"
-              ></i>
-            </div>
-            <div>
-              <h3 class="text-2xl font-bold text-slate-800 mb-1">
-                {{ currentOrder?.status === "paid" ? "Factura" : "Oferta" }} #{{
-                  currentOrder?.number ?? "Nueva"
-                }}
-              </h3>
+        <div class="flex items-center gap-4">
+          <div
+            class="bg-indigo-600 p-3 rounded-xl shadow-lg shadow-indigo-200"
+          >
+            <i
+              :class="
+                currentOrder?.status === 'paid'
+                  ? 'pi pi-receipt'
+                  : 'pi pi-file-edit'
+              "
+              class="text-white text-2xl"
+            ></i>
+          </div>
+          <div>
+            <h2 class="text-2xl font-black text-slate-800">
+              {{ currentOrder?.status === "paid" ? "Factura" : "Oferta" }} #{{
+                currentOrder?.number ?? "Nueva"
+              }}
+            </h2>
+            <div class="flex items-center gap-2 mt-1">
               <Tag
                 :value="statusLabel(currentOrder?.status)"
                 :severity="statusSeverity(currentOrder?.status)"
-                class="text-sm"
+                class="px-2 py-0.5 rounded-md uppercase text-[10px]"
               />
+              <span
+                v-if="currentOrder?.created_at"
+                class="text-xs text-slate-400"
+              >
+                {{ new Date(currentOrder.created_at).toLocaleString() }}
+              </span>
             </div>
           </div>
         </div>
@@ -506,3 +555,17 @@ const handleDownloadPDF = async (order, event) => {
   }
 };
 </script>
+
+<style scoped>
+:deep(.p-drawer-content) {
+  padding: 0 !important;
+}
+
+.modern-table :deep(.p-datatable-thead > tr > th) {
+  @apply bg-slate-50 text-slate-600 font-bold uppercase text-[11px] tracking-wider;
+}
+
+.modern-table :deep(.p-datatable-tbody > tr > td) {
+  @apply py-4 border-b border-slate-50;
+}
+</style>

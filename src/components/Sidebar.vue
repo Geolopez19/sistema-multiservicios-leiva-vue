@@ -11,33 +11,36 @@
       </div>
     </div>
 
-    <nav class="flex-1 p-4 flex flex-col gap-1 overflow-y-auto">
-      <router-link 
-        v-for="item in menuItems" 
-        :key="item.path" 
-        :to="item.path"
-        class="flex items-center gap-3 py-3 px-4 rounded-xl transition-all duration-200 hover:bg-white/10 hover:translate-x-1 text-indigo-100 hover:text-white group"
-        active-class="bg-white text-indigo-600 shadow-lg hover:bg-white hover:translate-x-0"
-      >
-        <component :is="item.icon" class="w-5 h-5 group-hover:scale-110 transition-transform" />
-        <span class="font-medium">{{ item.name }}</span>
-      </router-link>
-
-      <div class="mt-4 pt-4 border-t border-indigo-500/30 text-xs font-bold text-indigo-200 uppercase px-4 mb-2 tracking-widest">
-        Ventas
+    <nav class="flex-1 p-4 flex flex-col gap-6 overflow-y-auto custom-scrollbar">
+      <div v-for="(group, index) in navigation" :key="index" class="flex flex-col gap-2">
+        <div 
+          v-if="group.title" 
+          class="text-xs font-bold text-indigo-200 uppercase px-4 tracking-widest"
+        >
+          {{ group.title }}
+        </div>
+        
+        <router-link 
+          v-for="item in group.items" 
+          :key="item.path" 
+          :to="item.path"
+          class="flex items-center gap-3 py-2.5 px-4 rounded-xl transition-all duration-200 text-indigo-100 hover:text-white hover:bg-white/10 group relative"
+          active-class="bg-white/10 text-white font-semibold shadow-inner"
+        >
+          <component 
+            :is="item.icon" 
+            class="w-5 h-5 transition-transform group-hover:scale-110" 
+            :class="{ 'text-white': $route.path.startsWith(item.path), 'text-indigo-200 group-hover:text-white': !$route.path.startsWith(item.path) }"
+          />
+          <span class="font-medium">{{ item.name }}</span>
+          
+          <!-- Indicator for active state -->
+          <div 
+            v-if="$route.path.startsWith(item.path)" 
+            class="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-white rounded-r-md shadow-[0_0_10px_rgba(255,255,255,0.5)]"
+          ></div>
+        </router-link>
       </div>
-      <router-link to="/ventas/ofertas" class="flex items-center gap-3 py-3 px-4 rounded-xl transition-all duration-200 hover:bg-white/10 hover:translate-x-1 text-indigo-100 hover:text-white group" active-class="bg-white text-indigo-600 shadow-lg hover:bg-white hover:translate-x-0">
-        <ShoppingCart class="w-5 h-5 group-hover:scale-110 transition-transform" />
-        <span class="font-medium">Ofertas</span>
-      </router-link>
-      <router-link to="/ventas/facturas" class="flex items-center gap-3 py-3 px-4 rounded-xl transition-all duration-200 hover:bg-white/10 hover:translate-x-1 text-indigo-100 hover:text-white group" active-class="bg-white text-indigo-600 shadow-lg hover:bg-white hover:translate-x-0">
-        <FileText class="w-5 h-5 group-hover:scale-110 transition-transform" />
-        <span class="font-medium">Facturas</span>
-      </router-link>
-      <router-link to="/ventas/clientes" class="flex items-center gap-3 py-3 px-4 rounded-xl transition-all duration-200 hover:bg-white/10 hover:translate-x-1 text-indigo-100 hover:text-white group" active-class="bg-white text-indigo-600 shadow-lg hover:bg-white hover:translate-x-0">
-        <Users class="w-5 h-5 group-hover:scale-110 transition-transform" />
-        <span class="font-medium">Clientes</span>
-      </router-link>
     </nav>
 
     <div class="p-4 border-t border-indigo-500/30">
@@ -54,7 +57,6 @@
 
 <script setup>
 import { 
-  LayoutDashboard, 
   Package, 
   ShoppingCart, 
   Truck, 
@@ -65,11 +67,29 @@ import {
 } from 'lucide-vue-next'
 import { supabase } from '../lib/supabaseClient'
 
-const menuItems = [
-  { name: 'Inventario', path: '/inventario', icon: Package },
-  { name: 'Compras', path: '/compras', icon: Truck },
-  { name: 'Reportes', path: '/reportes', icon: BarChart3 },
-  { name: 'Usuarios', path: '/usuarios', icon: Users },
+const navigation = [
+  {
+    title: 'Principal',
+    items: [
+      { name: 'Inventario', path: '/inventario', icon: Package },
+      { name: 'Compras', path: '/compras', icon: Truck },
+    ]
+  },
+  {
+    title: 'Ventas',
+    items: [
+      { name: 'Ofertas', path: '/ventas/ofertas', icon: ShoppingCart },
+      { name: 'Facturas', path: '/ventas/facturas', icon: FileText },
+      { name: 'Clientes', path: '/ventas/clientes', icon: Users },
+    ]
+  },
+  {
+    title: 'Administración',
+    items: [
+      { name: 'Reportes', path: '/reportes', icon: BarChart3 },
+      { name: 'Usuarios', path: '/usuarios', icon: Users },
+    ]
+  }
 ]
 
 const handleLogout = async () => {

@@ -165,7 +165,7 @@
             </div>
 
             <!-- Totales -->
-            <PurchaseTotals :total="total" />
+            <PurchaseTotals :totals="totals" />
           </div>
         </div>
 
@@ -178,6 +178,10 @@
               class="bg-indigo-600 text-white hover:bg-indigo-700 border-0 shadow-md py-2 px-6 rounded-xl font-bold"
               :loading="isSaving" 
               @click.prevent="savePurchase" 
+              :pt="{
+                  label: { class: 'text-white' },
+                  icon: { class: 'text-white' }
+              }"
             />
             <Button 
               v-if="currentPurchase.id" 
@@ -237,7 +241,7 @@ import {
   finalizePurchase,
   deletePurchase 
 } from '../services/compras'
-import { formatCurrency, calculatePurchaseTotal } from '../utils/calculations'
+import { formatCurrency, calculatePurchaseTotals } from '../utils/calculations'
 import { handleError, showSuccess, showWarning } from '../utils/errorHandler'
 import { useConfirm } from 'primevue/useconfirm'
 import { business } from '../config/business'
@@ -291,7 +295,7 @@ const notes = ref('')
 const isSaving = ref(false)
 
 const readOnly = computed(() => currentPurchase.value?.status !== 'draft')
-const total = computed(() => calculatePurchaseTotal(items.value))
+const totals = computed(() => calculatePurchaseTotals(items.value))
 
 // Funciones
 const statusLabel = (s) => ({
@@ -354,7 +358,7 @@ const savePurchase = async () => {
     await upsertPurchaseItems(items.value.map(i => ({ ...i, purchase_id: purchaseId })))
     
     const updated = await patchPurchase(purchaseId, {
-      total: total.value,
+      total: totals.value.total,
       supplier_id: supplierId.value,
       supplier_name: supplier.value.name,
       supplier_phone: supplier.value.phone,
@@ -458,6 +462,9 @@ onMounted(() => {
 <style scoped>
 :deep(.p-drawer-content) {
   padding: 0 !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
 }
 
 .modern-table :deep(.p-datatable-thead > tr > th) {

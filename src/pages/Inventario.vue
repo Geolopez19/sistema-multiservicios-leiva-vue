@@ -2,7 +2,7 @@
   <div class="p-4 md:p-6">
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
       <h1 class="text-2xl md:text-3xl font-bold text-gray-800">Inventario</h1>
-      <Button label="Nuevo Producto" icon="pi pi-plus" @click="abrirModal('crear')" class="w-full md:w-auto" />
+      <Button label="Nuevo Producto" icon="pi pi-plus" @click="abrirModal('crear')" class="w-full md:w-auto !text-white" style="color: white !important;" />
     </div>
 
     <Tabs value="0">
@@ -48,6 +48,11 @@
             <DataTable 
               :value="productos" 
               :loading="loading" 
+              paginator
+              :rows="20"
+              :rowsPerPageOptions="[20, 50, 100]"
+              paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
+              currentPageReportTemplate="{first} a {last} de {totalRecords}"
               stripedRows 
               responsiveLayout="stack" 
               breakpoint="960px"

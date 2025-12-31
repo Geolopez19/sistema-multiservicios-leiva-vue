@@ -85,18 +85,27 @@
       }"
     >
       <template #header>
-        <div class="flex items-center gap-3">
-          <div class="bg-indigo-600 p-2 rounded-lg shadow-md">
-            <i class="pi pi-users text-white text-xl"></i>
-          </div>
-          <div>
-            <h3 class="text-xl font-bold text-slate-800">
-              Seleccionar Cliente
-            </h3>
-            <p class="text-sm text-slate-500">
-              Busca por nombre o teléfono para asignar a la venta
-            </p>
-          </div>
+        <div class="flex items-center justify-between w-full">
+            <div class="flex items-center gap-3">
+            <div class="bg-indigo-600 p-2 rounded-lg shadow-md">
+                <i class="pi pi-users text-white text-xl"></i>
+            </div>
+            <div>
+                <h3 class="text-xl font-bold text-slate-800">
+                Seleccionar Cliente
+                </h3>
+                <p class="text-sm text-slate-500">
+                Busca por nombre o teléfono para asignar a la venta
+                </p>
+            </div>
+            </div>
+             <Button 
+                label="Crear Nuevo" 
+                icon="pi pi-plus" 
+                class="bg-indigo-600 text-white hover:bg-indigo-700 font-bold border-0"
+                size="small"
+                @click="openCreateModal"
+            />
         </div>
       </template>
 
@@ -191,7 +200,13 @@
           <p class="text-lg font-medium text-slate-600">
             No encontramos coincidencias
           </p>
-          <p class="text-slate-400">Intenta con otro nombre o número</p>
+          <p class="text-slate-400 mb-4">Intenta con otro nombre o crea uno nuevo</p>
+           <Button 
+                label="Crear Nuevo Cliente" 
+                icon="pi pi-plus" 
+                class="bg-indigo-600 border-indigo-600" 
+                @click="openCreateModal"
+            />
         </div>
 
         <div
@@ -206,12 +221,59 @@
         </div>
       </div>
     </Dialog>
+
+    <!-- Modal de Creación -->
+    <Dialog 
+        v-model:visible="showCreateModal" 
+        modal 
+        header="Nuevo Cliente" 
+        class="w-full max-w-lg"
+        :pt="{
+            header: { class: 'bg-slate-50 border-b border-slate-200' }
+        }"
+    >
+        <div class="flex flex-col gap-4 pt-4">
+            <div class="flex flex-col gap-2">
+                <label class="font-bold text-slate-700">Nombre Completo <span class="text-red-500">*</span></label>
+                <InputText v-model="newCustomer.name" placeholder="Ej: Juan Pérez" autofocus />
+            </div>
+            <div class="flex flex-col gap-2">
+                <label class="text-slate-700">Cédula / RUC</label>
+                <InputText v-model="newCustomer.national_id" placeholder="Ej: 001-000000-0000A" />
+            </div>
+            <div class="flex flex-col gap-2">
+                <label class="text-slate-700">Teléfono</label>
+                <InputText v-model="newCustomer.phone" placeholder="Ej: 8888-8888" />
+            </div>
+             <div class="flex flex-col gap-2">
+                <label class="text-slate-700">Email</label>
+                <InputText v-model="newCustomer.email" placeholder="cliente@email.com" />
+            </div>
+            <div class="flex flex-col gap-2">
+                <label class="text-slate-700">Dirección</label>
+                <InputText v-model="newCustomer.address" placeholder="Ej: Managua, Nicaragua" />
+            </div>
+        </div>
+
+        <template #footer>
+            <Button label="Cancelar" icon="pi pi-times" text @click="showCreateModal = false" class="p-button-secondary" />
+            <Button 
+                label="Guardar Cliente" 
+                icon="pi pi-check" 
+                @click="handleCreateCustomer" 
+                :loading="isCreating"
+                class="bg-indigo-600 border-indigo-600"
+                :disabled="!newCustomer.name"
+            />
+        </template>
+    </Dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, watch } from "vue";
-import { searchCustomers } from "../../services/clientes";
+import { searchCustomers, createCustomer } from "../../services/clientes";
+import { showSuccess, handleError } from "../../utils/errorHandler";
 import Button from "primevue/button";
 import InputText from "primevue/inputtext";
 import Dialog from "primevue/dialog";
@@ -237,6 +299,11 @@ const showCustomerModal = ref(false);
 const customerSearchText = ref("");
 const foundCustomers = ref([]);
 
+// New state for creation
+const showCreateModal = ref(false);
+const newCustomer = ref({ name: '', phone: '', email: '', national_id: '', address: '' });
+const isCreating = ref(false);
+
 watch(
   () => props.modelValue,
   (newVal) => {
@@ -251,7 +318,7 @@ const onCustomerSearch = async () => {
 };
 
 const selectCustomer = (e) => {
-  const c = e.value;
+  const c = e.value || e;
   if (!c) return;
   internalCustomer.value = {
     name: c.name,
@@ -263,5 +330,34 @@ const selectCustomer = (e) => {
   showCustomerModal.value = false;
   customerSearchText.value = "";
   foundCustomers.value = [];
+};
+
+const openCreateModal = () => {
+    newCustomer.value = { name: '', phone: '', email: '', national_id: '', address: '' };
+    // Pre-fill name if searched
+    if (customerSearchText.value) {
+        newCustomer.value.name = customerSearchText.value;
+    }
+    showCreateModal.value = true;
+};
+
+const handleCreateCustomer = async () => {
+    if (!newCustomer.value.name) return;
+
+    try {
+        isCreating.value = true;
+        const created = await createCustomer(newCustomer.value);
+        showSuccess('Cliente creado exitosamente');
+
+        // Auto select
+        selectCustomer(created);
+
+        showCreateModal.value = false;
+        showCustomerModal.value = false;
+    } catch (err) {
+        handleError(err);
+    } finally {
+        isCreating.value = false;
+    }
 };
 </script>

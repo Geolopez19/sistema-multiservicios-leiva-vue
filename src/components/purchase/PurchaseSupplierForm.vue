@@ -15,11 +15,15 @@
         size="small"
         @click.prevent="showSupplierModal = true"
         class="bg-indigo-600 text-white hover:bg-indigo-700 border-0 shadow-sm text-sm"
+        :pt="{
+            label: { class: 'text-white' },
+            icon: { class: 'text-white' }
+        }"
       />
     </div>
     <div class="p-4 bg-white">
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div class="flex flex-col gap-1.5">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="flex flex-col gap-2">
           <label class="text-xs font-bold text-indigo-600 flex items-center gap-1.5 uppercase tracking-wider">
             <i class="pi pi-briefcase text-xs"></i>
             Nombre / Empresa
@@ -32,7 +36,7 @@
             @input="emit('update:modelValue', internalSupplier)"
           />
         </div>
-        <div class="flex flex-col gap-1.5">
+        <div class="flex flex-col gap-2">
           <label class="text-xs font-bold text-indigo-600 flex items-center gap-1.5 uppercase tracking-wider">
             <i class="pi pi-phone text-xs"></i>
             Teléfono
@@ -45,7 +49,7 @@
             @input="emit('update:modelValue', internalSupplier)"
           />
         </div>
-        <div class="flex flex-col gap-1.5">
+        <div class="flex flex-col gap-2">
           <label class="text-xs font-bold text-indigo-600 flex items-center gap-1.5 uppercase tracking-wider">
             <i class="pi pi-envelope text-xs"></i>
             Correo Electrónico
@@ -73,14 +77,23 @@
       }"
     >
       <template #header>
-        <div class="flex items-center gap-3">
-          <div class="bg-white/20 p-2 rounded-lg backdrop-blur-sm border border-white/20">
-            <i class="pi pi-truck text-white text-xl"></i>
-          </div>
-          <div>
-            <h3 class="text-xl font-bold text-white">Seleccionar Proveedor</h3>
-            <p class="text-sm text-indigo-100">Busca por nombre o RUC para asignar a la compra</p>
-          </div>
+        <div class="flex items-center justify-between w-full">
+            <div class="flex items-center gap-3">
+            <div class="bg-white/20 p-2 rounded-lg backdrop-blur-sm border border-white/20">
+                <i class="pi pi-truck text-white text-xl"></i>
+            </div>
+            <div>
+                <h3 class="text-xl font-bold text-white">Seleccionar Proveedor</h3>
+                <p class="text-sm text-indigo-100">Busca por nombre o RUC para asignar a la compra</p>
+            </div>
+            </div>
+            <Button 
+                label="Crear Nuevo" 
+                icon="pi pi-plus" 
+                class="bg-white text-indigo-600 border-white hover:bg-slate-100 font-bold"
+                size="small"
+                @click="openCreateModal"
+            />
         </div>
       </template>
 
@@ -145,11 +158,17 @@
         </div>
 
         <div v-else-if="supplierSearchText.length >= 2" class="flex flex-col items-center justify-center py-12 text-center">
-          <div class="bg-slate-100 p-4 rounded-full mb-3">
-            <i class="pi pi-search-minus text-4xl text-slate-400"></i>
-          </div>
-          <p class="text-lg font-medium text-slate-600">No encontramos coincidencias</p>
-          <p class="text-slate-400">Intenta con otro nombre o RUC</p>
+            <div class="bg-slate-100 p-4 rounded-full mb-3">
+                <i class="pi pi-search-minus text-4xl text-slate-400"></i>
+            </div>
+            <p class="text-lg font-medium text-slate-600">No encontramos coincidencias</p>
+            <p class="text-slate-400 mb-4">Intenta con otro nombre o crea uno nuevo</p>
+            <Button 
+                label="Crear Nuevo Proveedor" 
+                icon="pi pi-plus" 
+                class="bg-indigo-600 border-indigo-600" 
+                @click="openCreateModal"
+            />
         </div>
 
         <div v-else class="flex flex-col items-center justify-center py-12 text-center">
@@ -161,12 +180,59 @@
         </div>
       </div>
     </Dialog>
+
+    <!-- Modal de Creación -->
+    <Dialog 
+        v-model:visible="showCreateModal" 
+        modal 
+        header="Nuevo Proveedor" 
+        class="w-full max-w-lg"
+        :pt="{
+            header: { class: 'bg-slate-50 border-b border-slate-200' }
+        }"
+    >
+        <div class="flex flex-col gap-4 pt-4">
+            <div class="flex flex-col gap-2">
+                <label class="font-bold text-slate-700">Nombre / Razón Social <span class="text-red-500">*</span></label>
+                <InputText v-model="newSupplier.name" placeholder="Ej: Distribuidora ABC" autofocus />
+            </div>
+            <div class="flex flex-col gap-2">
+                <label class="text-slate-700">Teléfono</label>
+                <InputText v-model="newSupplier.phone" placeholder="Ej: 8888-8888" />
+            </div>
+             <div class="flex flex-col gap-2">
+                <label class="text-slate-700">Email</label>
+                <InputText v-model="newSupplier.email" placeholder="contacto@empresa.com" />
+            </div>
+             <div class="flex flex-col gap-2">
+                <label class="text-slate-700">RUC / Identificación</label>
+                <InputText v-model="newSupplier.ruc" placeholder="Ej: 123456789" />
+            </div>
+            <div class="flex flex-col gap-2">
+                <label class="text-slate-700">Dirección</label>
+                <InputText v-model="newSupplier.address" placeholder="Ej: Managua, Nicaragua" />
+            </div>
+        </div>
+
+        <template #footer>
+            <Button label="Cancelar" icon="pi pi-times" text @click="showCreateModal = false" class="p-button-secondary" />
+            <Button 
+                label="Guardar Proveedor" 
+                icon="pi pi-check" 
+                @click="handleCreateSupplier" 
+                :loading="isCreating"
+                class="bg-indigo-600 border-indigo-600"
+                :disabled="!newSupplier.name"
+            />
+        </template>
+    </Dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, watch } from 'vue'
-import { searchSuppliers } from '../../services/proveedores'
+import { searchSuppliers, createSupplier } from '../../services/proveedores'
+import { showSuccess, handleError } from '../../utils/errorHandler'
 import Button from 'primevue/button'
 import InputText from 'primevue/inputtext'
 import Dialog from 'primevue/dialog'
@@ -192,6 +258,11 @@ const showSupplierModal = ref(false)
 const supplierSearchText = ref('')
 const foundSuppliers = ref([])
 
+// Nuevo estado para creación
+const showCreateModal = ref(false)
+const newSupplier = ref({ name: '', phone: '', email: '', ruc: '', address: '' })
+const isCreating = ref(false)
+
 watch(
   () => props.modelValue,
   (newVal) => {
@@ -206,7 +277,7 @@ const onSupplierSearch = async () => {
 }
 
 const selectSupplier = (e) => {
-  const s = e.value
+  const s = e.value || e 
   if (!s) return
   internalSupplier.value = {
     name: s.name,
@@ -218,5 +289,35 @@ const selectSupplier = (e) => {
   showSupplierModal.value = false
   supplierSearchText.value = ''
   foundSuppliers.value = []
+}
+
+const openCreateModal = () => {
+  newSupplier.value = { name: '', phone: '', email: '', ruc: '', address: '' }
+  // Pre-fill name if user typed something in search
+  if (supplierSearchText.value) {
+    newSupplier.value.name = supplierSearchText.value
+  }
+  showCreateModal.value = true
+}
+
+const handleCreateSupplier = async () => {
+  if (!newSupplier.value.name) return
+  
+  try {
+    isCreating.value = true
+    const created = await createSupplier(newSupplier.value)
+    showSuccess('Proveedor creado exitosamente')
+    
+    // Auto-select
+    selectSupplier(created)
+    
+    // Close modals
+    showCreateModal.value = false
+    showSupplierModal.value = false
+  } catch (err) {
+    handleError(err)
+  } finally {
+    isCreating.value = false
+  }
 }
 </script>

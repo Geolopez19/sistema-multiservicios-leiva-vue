@@ -15,6 +15,15 @@ export async function searchCustomers(q, limit = 8) {
   return data || []
 }
 
+export async function listCustomers() {
+  const { data, error } = await supabase
+    .from('customers')
+    .select('*')
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  return data || []
+}
+
 export async function getCustomer(id) {
   const { data, error } = await supabase
     .from('customers')
