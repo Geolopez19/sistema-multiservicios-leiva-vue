@@ -1,9 +1,9 @@
 import { supabase } from '../lib/supabaseClient'
 import { registrarMovimiento } from './inventarioMovimientos'
 
-export async function getProductos({ 
-  search = '', 
-  orderBy = 'created_at', 
+export async function getProductos({
+  search = '',
+  orderBy = 'created_at',
   ascending = false,
   limit = null,
   offset = 0,
@@ -60,7 +60,7 @@ export async function addProducto(producto) {
   }
 
   const productoCreado = data?.[0]
-  
+
   if (productoCreado && productoCreado.stock > 0) {
     try {
       await registrarMovimiento({
@@ -140,14 +140,20 @@ export async function deleteProducto(id) {
     .eq('id', id)
     .single()
 
-  const { error } = await supabase
+  const { data: deletedData, error, count } = await supabase
     .from('productos')
-    .delete()
+    .delete({ count: 'exact' })
     .eq('id', id)
+    .select()
 
   if (error) {
     console.error('❌ Error al eliminar producto:', error.message)
     throw error
+  }
+
+  // Checking if actual deletion happened (RLS might return success but count 0)
+  if (!deletedData || deletedData.length === 0) {
+    throw new Error('No tienes permisos para eliminar este producto o el producto no existe.')
   }
 
   if (producto && producto.stock > 0) {

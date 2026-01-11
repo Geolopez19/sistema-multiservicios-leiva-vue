@@ -111,10 +111,15 @@ const handlePasswordUpdate = async () => {
 
     if (error) throw error
 
-    alert('Contraseña actualizada correctamente. Ingresa de nuevo con tu nueva contraseña.')
+    alert('Contraseña actualizada correctamente. Por favor inicia sesión con tu nueva contraseña.')
+    await supabase.auth.signOut()
     isRecoveryMode.value = false
     password.value = ''
-    router.push('/')
+    router.push('/login')
+    // Reload to ensure clean state if needed, but router push to same route (if already at login) might need force
+    if (route.path === '/login') {
+      window.location.href = '/login'
+    }
     
   } catch (error) {
     console.error('Password Update Error:', error)

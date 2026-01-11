@@ -2,16 +2,16 @@ import { supabase } from '../lib/supabaseClient'
 import { registrarMovimiento } from './inventarioMovimientos'
 
 export async function listPurchases(options = {}) {
-  const { limit = 50, offset = 0 } = typeof options === 'number' 
-    ? { limit: options } 
+  const { limit = 50, offset = 0 } = typeof options === 'number'
+    ? { limit: options }
     : options
-  
+
   const { data, error } = await supabase
     .from('purchase_orders')
     .select('*')
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1)
-  
+
   if (error) throw error
   return data || []
 }
@@ -69,18 +69,18 @@ export async function finalizePurchase(purchaseId) {
     const { data, error } = await supabase.rpc('finalize_purchase_batch', {
       p_purchase_id: purchaseId
     })
-    
+
     if (error) {
       console.warn('Función RPC no disponible, usando método antiguo:', error)
       return await finalizePurchaseLegacy(purchaseId)
     }
-    
+
     const { data: purchase, error: fetchError } = await supabase
       .from('purchase_orders')
       .select('*')
       .eq('id', purchaseId)
       .single()
-    
+
     if (fetchError) throw fetchError
     return purchase
   } catch (error) {
@@ -91,7 +91,7 @@ export async function finalizePurchase(purchaseId) {
 
 async function finalizePurchaseLegacy(purchaseId) {
   const items = await getPurchaseItems(purchaseId)
-  
+
   for (const item of items) {
     if (item.product_id && item.qty > 0) {
       const { data: producto } = await supabase
@@ -99,16 +99,16 @@ async function finalizePurchaseLegacy(purchaseId) {
         .select('id, nombre, stock')
         .eq('id', item.product_id)
         .single()
-      
+
       if (producto) {
         const stockAnterior = producto.stock || 0
         const stockNuevo = stockAnterior + item.qty
-        
+
         await supabase
           .from('productos')
           .update({ stock: stockNuevo })
           .eq('id', item.product_id)
-        
+
         await registrarMovimiento({
           producto_id: item.product_id,
           producto_nombre: item.product_name || producto.nombre,
@@ -121,23 +121,28 @@ async function finalizePurchaseLegacy(purchaseId) {
       }
     }
   }
-  
+
   const { data, error } = await supabase
     .from('purchase_orders')
     .update({ status: 'completed', completed_at: new Date().toISOString() })
     .eq('id', purchaseId)
     .select()
     .single()
-  
+
   if (error) throw error
   return data
 }
 
 export async function deletePurchase(purchaseId) {
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('purchase_orders')
     .delete()
     .eq('id', purchaseId)
+    .select()
+
   if (error) throw error
+  if (!data || data.length === 0) {
+    throw new Error('No se pudo eliminar la compra (verifique sus permisos).')
+  }
 }
 

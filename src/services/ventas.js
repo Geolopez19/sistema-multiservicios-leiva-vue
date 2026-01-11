@@ -45,8 +45,11 @@ export async function deleteItem(itemId) {
 }
 
 export async function deleteOrder(orderId) {
-  const { error } = await supabase.from('sales_orders').delete().eq('id', orderId)
+  const { data, error } = await supabase.from('sales_orders').delete().eq('id', orderId).select()
   if (error) throw error
+  if (!data || data.length === 0) {
+    throw new Error('No se pudo eliminar la factura (verifique sus permisos).')
+  }
 }
 
 export async function finalizeOrder(orderId) {

@@ -251,7 +251,7 @@ const sendRecoveryEmail = async () => {
   try {
     isSendingRecovery.value = true
     const { error } = await supabase.auth.resetPasswordForEmail(formData.value.email, {
-      redirectTo: window.location.origin + '/login?recovery=true'
+      redirectTo: (import.meta.env.VITE_APP_URL || window.location.origin) + '/login?recovery=true'
     })
     
     if (error) throw error
