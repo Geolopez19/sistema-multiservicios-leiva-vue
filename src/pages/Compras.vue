@@ -96,6 +96,7 @@
                 text rounded 
                 @click.stop="handlePrint(data)" 
                 v-tooltip.top="'Imprimir'"
+                v-if="false"
               />
             </div>
           </template>

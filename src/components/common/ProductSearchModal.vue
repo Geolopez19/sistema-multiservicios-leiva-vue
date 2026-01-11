@@ -23,6 +23,13 @@
           </p>
         </div>
       </div>
+      <Button
+        label="Nuevo Producto"
+        icon="pi pi-plus"
+        size="small"
+        :class="isPurple ? 'bg-purple-100 text-purple-700 hover:bg-purple-200 border-0' : 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200 border-0'"
+        @click="openCreateModal"
+      />
     </template>
 
     <div class="space-y-4 pt-4">
@@ -146,7 +153,13 @@
         <p class="text-lg font-medium text-slate-600">
           No encontramos productos
         </p>
-        <p class="text-slate-400">Intenta con otros términos de búsqueda</p>
+        <p class="text-slate-400 mb-4">Intenta con otros términos de búsqueda</p>
+        <Button 
+          label="Crear nuevo producto" 
+          icon="pi pi-plus" 
+          :link="true"
+          @click="openCreateModal"
+        />
       </div>
 
       <div
@@ -162,6 +175,14 @@
         <p class="text-slate-400">Escribe nombre o código del producto</p>
       </div>
     </div>
+
+    <!-- Create Product Dialog -->
+    <ProductFormDialog
+      v-model:visible="showCreateModal"
+      mode="crear"
+      :initial-data="initialCreateData"
+      @saved="onProductCreated"
+    />
   </Dialog>
 </template>
 
@@ -175,6 +196,8 @@ import IconField from 'primevue/iconfield'
 import InputIcon from 'primevue/inputicon'
 import InputText from 'primevue/inputtext'
 import Listbox from 'primevue/listbox'
+import Button from 'primevue/button'
+import ProductFormDialog from '../inventory/ProductFormDialog.vue'
 
 const props = defineProps({
   theme: {
@@ -188,7 +211,10 @@ const visible = defineModel('visible')
 const emit = defineEmits(['select'])
 
 const searchText = ref('')
+
 const foundProducts = ref([])
+const showCreateModal = ref(false)
+const initialCreateData = ref({})
 
 const isPurple = computed(() => props.theme === 'purple')
 
@@ -199,12 +225,30 @@ const onSearch = async () => {
 }
 
 const selectProduct = (e) => {
-  const p = e.value
+  const p = e.value || e // Handle both event from listbox (e.value) and direct call (e)
   if (!p) return
   
   emit('select', p)
   searchText.value = ''
   foundProducts.value = []
   visible.value = false
+}
+
+const openCreateModal = () => {
+    // Pre-fill name with search text if it looks like a name
+    initialCreateData.value = {
+        nombre: searchText.value,
+        categoria: '',
+        stock: 0,
+        precio: 0,
+        descripcion: ''
+    }
+    showCreateModal.value = true
+}
+
+const onProductCreated = (newProduct) => {
+    // Select the newly created product
+    selectProduct(newProduct)
+    showCreateModal.value = false
 }
 </script>

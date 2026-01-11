@@ -135,46 +135,14 @@
       </TabPanels>
     </Tabs>
 
-    <!-- Modal Producto (Crear/Editar) -->
-    <Dialog v-model:visible="modal.visible" :header="modal.modo === 'crear' ? 'Nuevo Producto' : 'Editar Producto'" modal class="w-full max-w-[90vw] md:max-w-md">
-      <div class="flex flex-col gap-4 py-2">
-        <div class="flex flex-col gap-2">
-          <label for="nombre" class="font-semibold">Nombre</label>
-          <InputText id="nombre" v-model="nuevo.nombre" placeholder="Nombre del producto" />
-        </div>
-        <div class="flex flex-col gap-2">
-          <label for="categoria" class="font-semibold">Categoría</label>
-          <Select 
-            id="categoria" 
-            v-model="nuevo.categoria" 
-            :options="todasLasCategorias" 
-            editable 
-            placeholder="Selecciona o escribe una categoría" 
-            class="w-full"
-          />
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div class="flex flex-col gap-2">
-            <label for="stock" class="font-semibold">Stock</label>
-            <InputNumber id="stock" v-model="nuevo.stock" fluid />
-          </div>
-          <div class="flex flex-col gap-2">
-            <label for="precio" class="font-semibold">Precio</label>
-            <InputNumber id="precio" v-model="nuevo.precio" mode="currency" currency="NIO" locale="es-NI" fluid />
-          </div>
-        </div>
-        <div class="flex flex-col gap-2">
-          <label for="descripcion" class="font-semibold">Descripción</label>
-          <Textarea id="descripcion" v-model="nuevo.descripcion" rows="3" autoResize />
-        </div>
-      </div>
-      <template #footer>
-        <div class="flex justify-end gap-2">
-          <Button label="Cancelar" text severity="secondary" @click="modal.visible = false" />
-          <Button label="Guardar" @click="guardarProducto" :loading="guardando" />
-        </div>
-      </template>
-    </Dialog>
+    <!-- Modal Producto (Componente Reutilizable) -->
+    <ProductFormDialog
+      v-model:visible="modal.visible"
+      :mode="modal.modo"
+      :initial-data="modal.producto"
+      :categories="todasLasCategorias"
+      @saved="onProductSaved"
+    />
 
     <!-- Modal Entrada de Stock -->
     <Dialog v-model:visible="modalEntrada.visible" header="Agregar Stock" modal class="w-full max-w-[90vw] md:max-w-sm">
@@ -202,11 +170,13 @@
 
 <script setup>
 import { ref, onMounted, watch, computed } from 'vue'
-import { getProductos, addProducto, updateProducto, deleteProducto } from '../services/productos'
+import { getProductos, updateProducto, deleteProducto } from '../services/productos'
 import { getHistorialMovimientos } from '../services/inventarioMovimientos'
 import { formatCurrency } from '../utils/calculations'
 import { handleError, showSuccess } from '../utils/errorHandler'
 import { useConfirm } from "primevue/useconfirm"
+import ProductFormDialog from '../components/inventory/ProductFormDialog.vue'
+
 import Button from 'primevue/button'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
@@ -254,8 +224,7 @@ const movimientosFiltrados = computed(() => {
   )
 })
 
-const modal = ref({ visible: false, modo: 'crear', producto: null })
-const nuevo = ref({ nombre: '', categoria: '', stock: 0, precio: 0, descripcion: '' })
+const modal = ref({ visible: false, modo: 'crear', producto: {} })
 
 const modalEntrada = ref({ visible: false, producto: null, cantidad: 1 })
 
@@ -313,11 +282,10 @@ const formatFecha = (fecha) => {
 }
 
 const abrirModal = (modo, producto = null) => {
-  modal.value = { visible: true, modo, producto }
-  if (producto) {
-    nuevo.value = { ...producto }
-  } else {
-    nuevo.value = { nombre: '', categoria: '', stock: 0, precio: 0, descripcion: '' }
+  modal.value = { 
+    visible: true, 
+    modo, 
+    producto: producto ? { ...producto } : {} 
   }
 }
 
@@ -354,25 +322,10 @@ const guardarEntradaStock = async () => {
   }
 }
 
-const guardarProducto = async () => {
-  try {
-    guardando.value = true
-    if (modal.value.modo === 'crear') {
-      await addProducto(nuevo.value)
-      showSuccess('Producto creado correctamente')
-    } else {
-      await updateProducto(modal.value.producto.id, nuevo.value)
-      showSuccess('Producto actualizado correctamente')
-    }
-    modal.value.visible = false
+const onProductSaved = () => {
     fetchProductos()
     cargarMetricasYCategorias()
     fetchHistorial() // Actualizar historial
-  } catch (err) {
-    handleError(err)
-  } finally {
-    guardando.value = false
-  }
 }
 
 const confirmarEliminar = (producto) => {
