@@ -1,5 +1,10 @@
 <template>
   <div class="max-w-7xl mx-auto p-4 md:p-6">
+    <!-- Receipt Ticket (Hidden on screen, visible on print) -->
+    <div class="hidden print:block fixed inset-0 bg-white z-[9999]">
+       <ReceiptTicket :order="printingOrder" :items="printingItems" :business="businessStore.settings" />
+    </div>
+
     <!-- Header solido/gradiente -->
     <div
       class="bg-gradient-to-r from-emerald-600 to-teal-600 rounded-2xl shadow-xl p-8 mb-8 text-white transition-all hover:shadow-2xl"
@@ -124,6 +129,15 @@
                 rounded
                 @click="handleDownloadPDF(data, $event)"
                 v-tooltip.top="'Descargar PDF'"
+              />
+               <Button
+                type="button"
+                icon="pi pi-receipt"
+                severity="info"
+                text
+                rounded
+                @click="handlePrintTicket(data, $event)"
+                v-tooltip.top="'Imprimir Ticket'"
               />
             </div>
           </template>
@@ -368,6 +382,15 @@
           />
           <Button
             type="button"
+            label="Ticket"
+            icon="pi pi-receipt"
+            severity="info"
+            variant="outlined"
+            class="py-2 px-6 rounded-xl font-bold"
+            @click="handlePrintTicket(currentOrder, $event)"
+          />
+          <Button
+            type="button"
             label="Descargar PDF"
             icon="pi pi-download"
             severity="success"
@@ -401,6 +424,8 @@ import { useBusinessStore } from "../stores/businessStore";
 import { printInvoice } from "../utils/printInvoice";
 import { downloadInvoicePDF } from "../utils/downloadPDF";
 import { useConfirm } from "primevue/useconfirm";
+import { nextTick } from "vue";
+import ReceiptTicket from "../components/sales/ReceiptTicket.vue";
 
 import Button from "primevue/button";
 import DataTable from "primevue/datatable";
@@ -446,6 +471,10 @@ const drawerVisible = ref(false);
 const currentOrder = ref(null);
 const items = ref([]);
 const loadingItems = ref(false);
+
+// Estado para impresión de ticket
+const printingOrder = ref(null);
+const printingItems = ref([]);
 
 // Funciones
 const statusLabel = (s) =>
@@ -512,6 +541,30 @@ const confirmCancelOrder = () => {
             }
         }
     });
+};
+
+const handlePrintTicket = async (order, event) => {
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+  try {
+    // 1. Set the order to print
+    printingOrder.value = order;
+    
+    // 2. Fetch items if needed
+    const its = await getOrderItems(order.id);
+    printingItems.value = its;
+
+    // 3. Wait for DOM update so ReceiptTicket renders with new data
+    await nextTick();
+
+    // 4. Trigger print
+    window.print();
+  } catch (error) {
+    console.error("Error printing receipt:", error);
+    handleError(error, "No se pudo preparar la impresión del ticket.");
+  }
 };
 
 const handlePrint = async (order, event) => {

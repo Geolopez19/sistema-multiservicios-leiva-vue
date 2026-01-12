@@ -1,5 +1,10 @@
 <template>
   <div class="max-w-7xl mx-auto">
+    <!-- Receipt Ticket (Hidden on screen, visible on print) -->
+    <div class="hidden print:block fixed inset-0 bg-white z-[9999]">
+       <ReceiptTicket :order="printingOrder" :items="printingItems" :business="businessStore.settings" />
+    </div>
+
     <!-- Header con gradiente -->
     <!-- Header solido -->
     <!-- Header Gradient -->
@@ -164,6 +169,22 @@
                 "
                 v-tooltip.top="'Imprimir'"
               />
+               <Button
+                type="button"
+                icon="pi pi-receipt"
+                severity="info"
+                text
+                rounded
+                @click="
+                  (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handlePrintTicket(data, e);
+                  }
+                "
+                v-if="data.status === 'paid'"
+                v-tooltip.top="'Imprimir Ticket'"
+              />
               <Button
                 type="button"
                 icon="pi pi-download"
@@ -302,6 +323,21 @@
             />
             <Button
               type="button"
+              label="Ticket"
+              icon="pi pi-receipt"
+              size="small"
+              @click="
+                (e) => {
+                  e.preventDefault();
+                  handlePrintTicket(currentOrder, e);
+                }
+              "
+              v-if="currentOrder?.id && currentOrder?.status === 'paid'"
+              class="bg-cyan-600 hover:bg-cyan-700 border-0 !text-white shadow-md mx-2"
+              style="color: white !important"
+            />
+            <Button
+              type="button"
               label="PDF"
               icon="pi pi-download"
               size="small"
@@ -347,6 +383,8 @@ import { downloadInvoicePDF } from "../utils/downloadPDF";
 import SalesCustomerForm from "../components/sales/SalesCustomerForm.vue";
 import SalesItemsTable from "../components/sales/SalesItemsTable.vue";
 import SalesTotals from "../components/sales/SalesTotals.vue";
+import ReceiptTicket from "../components/sales/ReceiptTicket.vue";
+import { nextTick } from "vue";
 
 import Button from "primevue/button";
 import DataTable from "primevue/datatable";
@@ -394,6 +432,10 @@ const items = ref([]);
 const customer = ref({ name: "", phone: "", email: "" });
 const customerId = ref(null);
 const isSaving = ref(false);
+
+// Estado para impresión de ticket
+const printingOrder = ref(null);
+const printingItems = ref([]);
 
 const readOnly = computed(() => currentOrder.value?.status !== "draft");
 
@@ -536,6 +578,28 @@ const handleCancelar = async () => {
       }
     },
   });
+};
+
+const handlePrintTicket = async (order, event) => {
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+  try {
+    printingOrder.value = order;
+    
+    // Si estamos editando y tenemos items en memoria (caso oferta nueva no guardada), usarlos?
+    // Por simplicidad, asumimos que se imprime lo guardado o lo que trae la orden.
+    // Para ofertas/facturas, obtenemos items de BD.
+    const its = await getOrderItems(order.id);
+    printingItems.value = its;
+
+    await nextTick();
+    window.print();
+  } catch (error) {
+    console.error("Error printing receipt:", error);
+    handleError(error, "No se pudo preparar la impresión del ticket.");
+  }
 };
 
 const handlePrint = async (order, event) => {
